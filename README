@@ -1,0 +1,43 @@
+Program: LR-GLASS
+--------------------------------------------------------------------------------
+
+Description:
+
+  Endless Analysis.
+--------------------------------------------------------------------------------
+
+Content:
+  
+  makefile	  : MakeFile for build program
+  main.C	  : main file
+
+  source	  : Source files
+  include	  : Include files
+  cards		  : cards files
+  example_data	  : data files for example cards
+--------------------------------------------------------------------------------
+
+Syntax: ./lrGlass outputFile.root card.txt dirName plotName 
+
+for help execute: ./lrGlass
+
+--------------------------------------------------------------------------------
+
+Card Types: 
+	-thrEff: Calculate efficiency for threshold scan.
+	-volEff: Calculate efficiency for voltage scan.
+--------------------------------------------------------------------------------
+
+Support:
+
+  Shchablo@gmail.com
+--------------------------------------------------------------------------------
+
+System Requirements:
+
+  - ROOT 6.05/02 CERN Library (https://root.cern.ch)
+--------------------------------------------------------------------------------
+
+
+
+
