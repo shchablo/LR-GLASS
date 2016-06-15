@@ -224,7 +224,7 @@ void Configure::getMask(char* inputTextFile, int* mask, int *firstCh, int *lastC
   {
     while (getline(myfile, line))
     {
-      if(strncmp(line.c_str(),"#MASK END.", 9) == 0)
+      if(strncmp(line.c_str(),"#MASK END.", 10) == 0)
         read = false;
       if(read) {
         char tmp[128];
@@ -239,6 +239,34 @@ void Configure::getMask(char* inputTextFile, int* mask, int *firstCh, int *lastC
         i++;
       }
     if(strncmp(line.c_str(), "#MASK:", 6) == 0)
+      read = true;
+    }
+    myfile.close();
+  }
+  else cout << "#ERROR: Unable to open card file" << endl;
+}
+
+void Configure::getMap(char* inputTextFile, MAP* map)
+{
+ int i = 0;
+  bool read = false;
+  string line;
+  ifstream myfile (inputTextFile);
+  if (myfile.is_open())
+  {
+    while (getline(myfile, line))
+    {
+      if(strncmp(line.c_str(),"#MAP END.", 9) == 0)
+        read = false;
+      if(read) {
+        char tmp[128];
+        strcpy(tmp, line.c_str());
+            map[i].TDC = atoi(tmp);
+        strtok(tmp, "_");
+            map[i].real = atoi(strtok(NULL, "_"));
+        i++;
+      }
+    if(strncmp(line.c_str(), "#MAP:", 5) == 0)
       read = true;
     }
     myfile.close();

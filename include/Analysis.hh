@@ -16,6 +16,11 @@
 
 using namespace std;
 
+struct MAP {
+    int             TDC;
+    int             real;
+};
+
 struct RAWData {
     int             iEvent;     //Event i
     int             TDCNHits;   //Number of hits in event i
@@ -36,6 +41,7 @@ public:
   void setThreshold(double *threshold);
   void setVoltage(double *voltage);
   void setMask(int firstW, int lastW, int *Mask, int nChMask);
+  void setMap(MAP *map);
   int loop(char** inputFileNames, char* dirName, char* plotName, int numInFiles, char* nameType, double *param, int numParam);
 
 protected:
@@ -47,6 +53,7 @@ protected:
   int lastCh;
   int numChMask;
   int *mask;
+  MAP *map_;
 
   double thrEff(char* inputFileName, double lowTSThr, double highTSThr);
   double thrEffErr(char* inputFileName, double lowTSThr, double highTSThr);
@@ -58,9 +65,11 @@ protected:
   int volEffScan(char** inputFileNames, char* dirName, char* plotName, int numInFiles,
                  double lowTimeStampThr, double highTimeStampThr);
   int noiseHist(char* inputFileName, char* dirName, char* plotName, double acqTime);
-  int stripHist(char* inputFileName, char*dirName, char* plotName, double lowTSThr, double highTSThr);
+  int stripHist(char* inputFileName, char*dirName, char* plotName, double lowTSThr, double highTSThr, double range,int lowTDCNHits, int highTDCNHits, int maxCount);
   int noiseThrScan(char** inputFileNames, char* dirName, char* plotName, int numInFiles, double acqTime);
   int noiseVolScan(char** inputFileNames, char* dirName, char* plotName, int numInFiles, double acqTime);
+  int corrMatrix(char* inputFileName, char* dirName, char* plotName,  double range);
+  int timeCorrMatrix(char* inputFileName, char* dirName, char* plotName,  double range);
 
 };
 #endif

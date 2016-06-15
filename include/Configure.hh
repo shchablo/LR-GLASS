@@ -7,6 +7,8 @@
 #include <fstream>
 #include <TFile.h>
 
+#include "Analysis.hh"
+
 using namespace std;
 
 class Configure
@@ -27,6 +29,7 @@ public:
   int getThrVolt(char* inputTextFile, double* thr, double* voltage, int numInFiles);
   int getMaskNumParam(char* inputTextFile);
   void getMask(char* inputTextFile, int* mask, int* firstCh, int* lastCh);
+  void getMap(char* inputTextFile, MAP* map);
 };
 
 #endif

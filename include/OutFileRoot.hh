@@ -11,6 +11,7 @@
 #include <TGraph.h>
 #include <TMultiGraph.h>
 #include <TH1F.h>
+#include <TH2D.h>
 #include "TGraphErrors.h"
 #include "TCanvas.h"
 #include "TLine.h"

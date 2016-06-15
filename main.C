@@ -100,6 +100,8 @@ int numChMask = configure.getMaskNumParam(inputTextFile);
   int lastCh = 0;
   configure.getMask(inputTextFile, mask, &firstCh, &lastCh);
   /* END. */  
+  MAP map[32];
+  configure.getMap(inputTextFile, map);
 
   cout <<"# INFORMATION ABOUT RUN"                                       << endl;
   cout <<"#------------------------------------------------------------" << endl;
@@ -122,6 +124,7 @@ int numChMask = configure.getMaskNumParam(inputTextFile);
     analysis.setThreshold(threshold);
     analysis.setVoltage(voltage);
     analysis.setMask(firstCh, lastCh, mask, numChMask);
+    analysis.setMap(map);
     analysis.setOutputFile(outputFileName, outputTreeName);
     int isLoop = analysis.loop(inputFileNames, dirName, plotName, numInFiles, nameType, param, numParam);
     if(isLoop == 1)

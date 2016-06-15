@@ -1,6 +1,6 @@
 #INFORMATION:
 #-------------------------------------------------------------------------#
-type calculate: voltage scan efficiency for time stamp window (-type=volEff)
+type calculate - "HVscan window eff": -type=volEff
 low time stamp threshold [mV]: -lThr
 higth time stamp threshold [mV]: -hThr
 
@@ -11,44 +11,55 @@ higth time stamp threshold [mV]: -hThr
 ...
 -ch=10[N] - channels for mask.
 
-THR-HV - Number of line with value for thr and volt should be same with Number of files for read.
+THR-HV - Number of line with value for thr and volt should be same with Number of files for read. 
 #-------------------------------------------------------------------------#
 #INFORMATION END.
 
 #TYPE:
 -type=volEff
--lThr=1700
--hThr=2200
+-lThr=250
+-hThr=350
 #TYPE END.
 
 #MASK:
--firstW=1000
--lastW=1127
--ch=1036
+-firstCh=3000
+-lastCh=3047
+-ch=3016
+-ch=3017
+-ch=3018
+-ch=3019
+-ch=3020
+-ch=3021
+-ch=3022
+-ch=3023
+-ch=3024
+-ch=3025
+-ch=3026
+-ch=3027
+-ch=3028
+-ch=3029
+-ch=3030
+-ch=3031
 #MASK END.
 
 #THR-HV:
-190mV_7000V
-220mV_7000V
-250mV_7000V
-275mV_7000V
-300mV_7000V
-325mV_7000V
-350mV_7000V
-375mV_7000V
-400mV_7000V
-450mV_7000V
+220mV_6000V
+220mV_6200V
+220mV_6400V
+220mV_6500V
+220mV_6600V
+220mV_6700V
+220mV_6800V
+220mV_6900V
 #THR-HV END.
 
 #FILES:
-../newData/H2-CMS-SCAN5_GRPC-GTRPC/H2-CMS-SCAN5_GRPC-GTRPC_20000_False-Trigger_190mV_7000V_run20160513144428.root
-../newData/H2-CMS-SCAN5_GRPC-GTRPC/H2-CMS-SCAN5_GRPC-GTRPC_20000_False-Trigger_220mV_7000V_run20160513143617.root
-../newData/H2-CMS-SCAN5_GRPC-GTRPC/H2-CMS-SCAN5_GRPC-GTRPC_20000_False-Trigger_250mV_7000V_run20160513142908.root
-../newData/H2-CMS-SCAN5_GRPC-GTRPC/H2-CMS-SCAN5_GRPC-GTRPC_20000_False-Trigger_275mV_7000V_run20160513141636.root
-../newData/H2-CMS-SCAN5_GRPC-GTRPC/H2-CMS-SCAN5_GRPC-GTRPC_20000_False-Trigger_300mV_7000V_run20160513141014.root
-../newData/H2-CMS-SCAN5_GRPC-GTRPC/H2-CMS-SCAN5_GRPC-GTRPC_20000_False-Trigger_325mV_7000V_run20160513150403.root
-../newData/H2-CMS-SCAN5_GRPC-GTRPC/H2-CMS-SCAN5_GRPC-GTRPC_20000_False-Trigger_350mV_7000V_run20160513135852.root
-../newData/H2-CMS-SCAN5_GRPC-GTRPC/H2-CMS-SCAN5_GRPC-GTRPC_20000_False-Trigger_375mV_7000V_run20160513145408.root
-../newData/H2-CMS-SCAN5_GRPC-GTRPC/H2-CMS-SCAN5_GRPC-GTRPC_20000_False-Trigger_400mV_7000V_run20160513135250.root
-../newData/H2-CMS-SCAN5_GRPC-GTRPC/H2-CMS-SCAN5_GRPC-GTRPC_50000_False-Trigger_450mV_7000V_run20160513134428.root
+/home/shchablo/projects/LR-GLASS_dir/gif-data/id1190/Scan001190_Run20160529172404_HV1_DAQ.root
+/home/shchablo/projects/LR-GLASS_dir/gif-data/id1190/Scan001190_Run20160529175430_HV2_DAQ.root
+/home/shchablo/projects/LR-GLASS_dir/gif-data/id1190/Scan001190_Run20160529182545_HV3_DAQ.root
+/home/shchablo/projects/LR-GLASS_dir/gif-data/id1190/Scan001190_Run20160529211015_HV4_DAQ.root
+/home/shchablo/projects/LR-GLASS_dir/gif-data/id1190/Scan001190_Run20160529211701_HV5_DAQ.root
+/home/shchablo/projects/LR-GLASS_dir/gif-data/id1190/Scan001190_Run20160529214103_HV6_DAQ.root
+/home/shchablo/projects/LR-GLASS_dir/gif-data/id1190/Scan001190_Run20160529214805_HV7_DAQ.root
+/home/shchablo/projects/LR-GLASS_dir/gif-data/id1190/Scan001190_Run20160529215436_HV8_DAQ.root
 #FILES END.
