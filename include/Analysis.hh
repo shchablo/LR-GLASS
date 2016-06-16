@@ -65,7 +65,8 @@ protected:
   int volEffScan(char** inputFileNames, char* dirName, char* plotName, int numInFiles,
                  double lowTimeStampThr, double highTimeStampThr);
   int noiseHist(char* inputFileName, char* dirName, char* plotName, double acqTime);
-  int stripHist(char* inputFileName, char*dirName, char* plotName, double lowTSThr, double highTSThr, double range,int lowTDCNHits, int highTDCNHits, int maxCount);
+  int stripHist(char* inputFileName, char*dirName, char* plotName, double lowTSThr, double highTSThr, double range,
+                int lowTDCNHits, int highTDCNHits, int maxCount, int windowSize);
   int noiseThrScan(char** inputFileNames, char* dirName, char* plotName, int numInFiles, double acqTime);
   int noiseVolScan(char** inputFileNames, char* dirName, char* plotName, int numInFiles, double acqTime);
   int corrMatrix(char* inputFileName, char* dirName, char* plotName,  double range);

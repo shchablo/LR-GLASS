@@ -131,6 +131,7 @@ int numChMask = configure.getMaskNumParam(inputTextFile);
       cout << "The End." << endl;
     if(isLoop == -1) { 
       cout << "ERROR: Can't read file." << endl;
+      cout << endl;
       cout << "The End." << endl;
     }
 

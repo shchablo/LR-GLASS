@@ -459,7 +459,7 @@ int Analysis::noiseHist(char* inputFileName, char*dirName, char* plotName, doubl
 }
 
 int Analysis::stripHist(char* inputFileName, char*dirName, char* plotName, double lowTSThr, double highTSThr, double range,
-    int lowTDCNHits, int highTDCNHits, int maxCount)
+    int lowTDCNHits, int highTDCNHits, int maxCount, int windowSize)
 {
     double min = 1000000; 
     double max = 0;
@@ -564,7 +564,7 @@ int Analysis::stripHist(char* inputFileName, char*dirName, char* plotName, doubl
       if(data.TDCCh->at(h) >= firstCh && data.TDCCh->at(h) <= lastCh && isCh) {
         for(int h2 = 0; h2 < data.TDCNHits; h2++) {
           if(h != h2 && data.TDCTS->at(h) + range >= data.TDCTS->at(h2) && data.TDCTS->at(h) <= data.TDCTS->at(h2) && isCh
-              && (data.TDCCh->at(h2) <= data.TDCCh->at(h)-1 || data.TDCCh->at(h2) >= data.TDCCh->at(h)+1))
+              && (data.TDCCh->at(h2) >= (data.TDCCh->at(h)-windowSize) && data.TDCCh->at(h2) <= (data.TDCCh->at(h)+windowSize)))
             count += 1;
         }
         multiplicity->Fill(count);
@@ -621,6 +621,7 @@ int Analysis::stripHist(char* inputFileName, char*dirName, char* plotName, doubl
   dir+="_highNHit-"; dir+=highTDCNHits;
   dir+="_range-"; dir+=range;
   dir+="_maxMultiplicity-"; dir+=maxCount;
+  dir+="_windowSize-"; dir+=windowSize;
   const char* dirc=dir.Data();
 
   writeObject(dirc, multiplicity);
@@ -931,7 +932,7 @@ int Analysis::loop(char** inputFileNames, char* dirName, char* plotName, int num
   
   if(strncmp(nameType, "stripHist", 9) == 0) { // stripHist
     
-    if(numParam != 6) {
+    if(numParam != 7) {
       cout << "ERROR: incorrect number for parameters!" << endl;
       cout << "For Type: " << nameType << " Need two parametors." << endl;
       return 1;
@@ -941,7 +942,7 @@ int Analysis::loop(char** inputFileNames, char* dirName, char* plotName, int num
       return 1;
     }
 
-    int isStripHist = stripHist(inputFileNames[0], dirName, plotName, param[0], param[1], param[4], param[2], param[3], param[5]);
+    int isStripHist = stripHist(inputFileNames[0], dirName, plotName, param[0], param[1], param[4], param[2], param[3], param[5], param[6]);
     if(isStripHist == 0)
       cout << "ERROR: Can't plot" << endl;
       return 1;
@@ -972,6 +973,7 @@ int Analysis::loop(char** inputFileNames, char* dirName, char* plotName, int num
       cout << "ERROR: Can't plot." << endl;
       return 1;
   }
+
   if(strncmp(nameType, "corrMatrix", 10) == 0) { // noise
     
     if(numParam != 1) {
