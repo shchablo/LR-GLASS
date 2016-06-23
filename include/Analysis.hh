@@ -26,6 +26,7 @@ struct RAWData {
     int             TDCNHits;   //Number of hits in event i
     vector<int>    *TDCCh;      //List of channels giving hits per event
     vector<float>  *TDCTS;      //List of the corresponding time stamps
+    bool check;
 };
 
 class Analysis : public OutFileRoot
@@ -38,39 +39,66 @@ public:
   //! destructor
   virtual ~Analysis();
 
-  void setThreshold(double *threshold);
+  int indexMinMax(int length, double* data, int flag);
+  int setInputFileNames(char **inputFileNames, int numInFiles);
+  int setParam(double *param, int numParam); 
+  void setThreshold(double *threshold); 
   void setVoltage(double *voltage);
-  void setMask(int firstW, int lastW, int *Mask, int nChMask);
-  void setMap(MAP *map);
-  int loop(char** inputFileNames, char* dirName, char* plotName, int numInFiles, char* nameType, double *param, int numParam);
+  int  setMask(int firstCh, int lastCh, int *mask, int numChMask);
+  int  setMap(MAP *map, int numChMap); 
+  void setDirName(char *dirName);
+  void setPlotName(char *plotName);
+  
+  int getEntries(char *inputFileName);
+  RAWData Filter(RAWData *data);
+  RAWData getEvent(int nEvent, char *inputFileName);
+  RAWData getData(RAWData *read);
+  int getMinMaxTime(double binTime, double *minTime, double *maxTime, int *numBins);
+  double getMeanMoreTime(int hitIndex, RAWData *data);
+  double getMeanLessTime(int hitIndex, RAWData *data);
+  double getCurrent(int index);
+  
+  int hitsProfile(); 
+  int timeProfile();
+  int meanMoreTimeProfile();
+  int currentSourceProfile();
+  int diffTimeProfile();
+  int effProfile();
+  
+  int loop(char* nameType);
+  
+  string getError(int index);
 
 protected:
 
-  double *threshold;
-  double *voltage;
+  char **inputFileNames_;
+  int numInFiles_;
+  bool isInputFileNames_;
   
-  int firstCh;
-  int lastCh;
-  int numChMask;
-  int *mask;
+  double *param_;
+  int numParam_;
+  bool isParam_;
+
+  double *thr_;
+  bool isThreshold_;
+  
+  double *volt_;
+  bool isVoltage_;
+
+  int firstCh_;
+  int lastCh_;
+  int *mask_;
+  int numChMask_;
+  bool isMask_;
+
   MAP *map_;
+  int numChMap_;
+  bool isMap_;
+  int chMinMap_;
+  int chMaxMap_;
 
-  double thrEff(char* inputFileName, double lowTSThr, double highTSThr);
-  double thrEffErr(char* inputFileName, double lowTSThr, double highTSThr);
-  double thrCorr(char* inputFileName, double lowTSThr, double highTSThr, double lowTSThr2, double highTSThr2, int ch1, int ch2);
-  double noise(char* inputFileName, double acqTime);
- 
-  int thrEffScan(char** inputFileNames, char* dirName, char* plotName,  int numInFiles,
-                 double lowTimeStapThr, double highTimeStapThr);
-  int volEffScan(char** inputFileNames, char* dirName, char* plotName, int numInFiles,
-                 double lowTimeStampThr, double highTimeStampThr);
-  int noiseHist(char* inputFileName, char* dirName, char* plotName, double acqTime);
-  int stripHist(char* inputFileName, char*dirName, char* plotName, double lowTSThr, double highTSThr, double range,
-                int lowTDCNHits, int highTDCNHits, int maxCount, int windowSize);
-  int noiseThrScan(char** inputFileNames, char* dirName, char* plotName, int numInFiles, double acqTime);
-  int noiseVolScan(char** inputFileNames, char* dirName, char* plotName, int numInFiles, double acqTime);
-  int corrMatrix(char* inputFileName, char* dirName, char* plotName,  double range);
-  int timeCorrMatrix(char* inputFileName, char* dirName, char* plotName,  double range);
-
+  char* dirName_;
+  
+  char* plotName_;
 };
 #endif

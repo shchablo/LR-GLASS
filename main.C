@@ -99,8 +99,9 @@ int numChMask = configure.getMaskNumParam(inputTextFile);
   int firstCh = 0;
   int lastCh = 0;
   configure.getMask(inputTextFile, mask, &firstCh, &lastCh);
-  /* END. */  
-  MAP map[32];
+  /* END. */ 
+  int numChMap = lastCh - firstCh - numChMask + 1;
+  MAP map[numChMap];
   configure.getMap(inputTextFile, map);
 
   cout <<"# INFORMATION ABOUT RUN"                                       << endl;
@@ -121,12 +122,19 @@ int numChMask = configure.getMaskNumParam(inputTextFile);
   cout <<"#------------------------------------------------------------" << endl;
 
     Analysis analysis;
+
+    analysis.setInputFileNames(inputFileNames, numInFiles);
+    analysis.setDirName(dirName);
+    analysis.setPlotName(plotName);
     analysis.setThreshold(threshold);
     analysis.setVoltage(voltage);
     analysis.setMask(firstCh, lastCh, mask, numChMask);
-    analysis.setMap(map);
+    analysis.setMap(map, numChMap);
+    analysis.setParam(param, numParam);
+    
     analysis.setOutputFile(outputFileName, outputTreeName);
-    int isLoop = analysis.loop(inputFileNames, dirName, plotName, numInFiles, nameType, param, numParam);
+
+    int isLoop = analysis.loop(nameType);
     if(isLoop == 1)
       cout << "The End." << endl;
     if(isLoop == -1) { 
