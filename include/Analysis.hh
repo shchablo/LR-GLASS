@@ -10,12 +10,15 @@
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
+#include <KCluster.hh>
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
 struct AData {
     int            TDCNHits;  // Number of hits in event i
     vector<int>    *TDCCh;    // List of channels giving hits per event
     vector<double>  *TDCTS;   // List of the corresponding time stamps
 };
-
 //------------------------------------------------------------------------------
 
 class Analysis : public CMSRoot, public WebDcs
@@ -34,12 +37,9 @@ public:
   bool setParam(double *param, int numParam);
   //----------------------------------------------------------------------------
 
-  void clustering(int spaceRange, double timeRange, 
-                  AData data, 
-                  int *TDCNHits, vector<int> *TDCCh, vector<double> *TDCTS);
   /* Loop function */ 
   //----------------------------------------------------------------------------
-   bool loop(char* nameType);
+  int loop(char* nameType);
   //----------------------------------------------------------------------------
 protected:
 
@@ -51,8 +51,9 @@ protected:
 
   /* Analysis functions. */ 
   //----------------------------------------------------------------------------
+  int example();
   int francois();
-  int general();
+  int kGenStudy();
   //----------------------------------------------------------------------------
 };
 #endif

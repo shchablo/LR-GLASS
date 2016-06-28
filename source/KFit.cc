@@ -1,18 +1,18 @@
-#include "Fit.hh"
+#include "KFit.hh"
 
 /* Constructor, destructor. */ 
 //------------------------------------------------------------------------------
-/*! \fn Fit
+/*! \fn KFit
 * \brief   constructtor
 */
-Fit::Fit()
+KFit::KFit()
 {
 }
 
-/*! \fn ~Fit
+/*! \fn ~KFit
 * \brief  destructor
 */
-Fit::~Fit()
+KFit::~KFit()
 {
 }
 //------------------------------------------------------------------------------
@@ -31,7 +31,7 @@ Fit::~Fit()
 *   \return  double index
 *
 */
-void Fit::min_max(int length, double *xData, double *yData, int flag, double *xResult, double *yResult, int *index)
+void KFit::min_max(int length, double *xData, double *yData, int flag, double *xResult, double *yResult, int *index)
 {
     *xResult = xData[0];
     *yResult = yData[0];
@@ -60,7 +60,7 @@ void Fit::min_max(int length, double *xData, double *yData, int flag, double *xR
 *                      1 -> find max)
 *   \return  int index
 */
-int Fit::indexMinMax(int length, double* data, int flag)
+int KFit::indexMinMax(int length, double* data, int flag)
 {
     int index = 0;
     double result = data[0];
@@ -93,7 +93,7 @@ int Fit::indexMinMax(int length, double* data, int flag)
     \return   double *right  array for rights sides of windows
     \return   double *center  array for centers sides of windows
 */
-void Fit::splitHist(int *NPeak, TH1D *hist, double *left, double *right, double *center)
+void KFit::splitHist(int *NPeak, TH1D *hist, double *left, double *right, double *center)
 {
   double xData[hist->GetNbinsX()];
   double yData[hist->GetNbinsX()];
@@ -150,7 +150,7 @@ void Fit::splitHist(int *NPeak, TH1D *hist, double *left, double *right, double 
 *   \return   double *left  array for left side of window
     \return   double *right  array for right side of window
 */
-RooFitResult* Fit::nGaussFit(int NPeak, TH1D *hist,
+RooFitResult* KFit::nGaussFit(int NPeak, TH1D *hist,
                     double *left, double *right, double *center,
                     double **arrMean, double **arrSigma)
 {

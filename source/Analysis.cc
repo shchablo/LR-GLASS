@@ -18,143 +18,6 @@ Analysis::~Analysis()
 }
 //------------------------------------------------------------------------------
 
-void Analysis::clustering(int spaceRange, double timeRange, 
-                          AData inData, int *outTDCNHits, vector<int> *outTDCCh, vector<double> *outTDCTS) 
-{
-  *outTDCNHits = 0;
-  outTDCCh->clear();
-  outTDCTS->clear();
-  int tempCh = 0;
-  double tempTime = 0;
-  bool exit = false;
-  while(!exit) {
-   exit = true;
-   for(int i = 0; i < inData.TDCNHits - 1; i++)
-     if(inData.TDCCh->at(i) > inData.TDCCh->at(i+1)) {
-      tempCh = inData.TDCCh->at(i);
-      inData.TDCCh->at(i) = inData.TDCCh->at(i+1);
-      inData.TDCCh->at(i+1) = tempCh;
-      tempTime = inData.TDCTS->at(i);
-      inData.TDCTS->at(i) = inData.TDCTS->at(i+1);
-      inData.TDCTS->at(i+1) = tempCh;
-      exit = false;
-     }
-  }
-  int hBegin = 0;
-  bool cluster[inData.TDCNHits];
-  for(int h = 0; h < inData.TDCNHits; h++)
-    cluster[h] = true;
-  inData.TDCCh->push_back(std::numeric_limits<int>::max());
-  inData.TDCTS->push_back(0);
-  
-  int TDCNHits = 0;
-  vector<int> TDCCh; TDCCh.clear();
-  vector<double> TDCTS; TDCTS.clear();
-  vector<int> index; index.clear();
-  exit = false;
-  while(!exit) {
-    exit = true;
-    for(int h = hBegin; (h < inData.TDCNHits) && cluster[h]; h++) {
-      int hIndex = h+1;
-      for(int hh = hIndex; hh < inData.TDCNHits; hh++) {
-        if(cluster[hh] == true) {
-          hIndex = hh;
-          break;
-        }
-      }
-      if(inData.TDCCh->at(h) + spaceRange < inData.TDCCh->at(hIndex)) {
-        if(TDCNHits != 0) {
-          exit = false;
-          while(!exit) {
-            double minTDCTS = std::numeric_limits<double>::max();
-            double maxTDCTS = std::numeric_limits<double>::min();
-            int indexMinTDCTS = 0;
-            int indexMaxTDCTS = 0;
-            double meanTDCTS = 0;
-            double meanTDCCh = 0;
-            if(TDCNHits != 0) {
-              for(int hh = 0; hh < TDCNHits; hh++) {
-                meanTDCTS += TDCTS.at(hh);
-                meanTDCCh += TDCCh.at(hh);
-                if(minTDCTS > TDCTS.at(hh)) {
-                  minTDCTS = TDCTS.at(hh);
-                  indexMinTDCTS = hh;
-                }
-                if(maxTDCTS < TDCTS.at(hh)) {
-                  maxTDCTS = TDCTS.at(hh);
-                  indexMaxTDCTS = hh;
-                }
-              }
-              meanTDCTS = meanTDCTS/TDCNHits;
-              meanTDCCh = meanTDCCh/TDCNHits;
-              if(timeRange > (maxTDCTS - minTDCTS) || true) {
-                outTDCCh->push_back(meanTDCCh);
-                outTDCTS->push_back(meanTDCTS);
-                *outTDCNHits += 1;
-                exit = true;
-              }
-              else {
-                if(abs(maxTDCTS - meanTDCCh) > abs(meanTDCCh - minTDCTS)) {
-                  TDCNHits -= 1;
-                  cluster[index[indexMaxTDCTS]] = false;
-                  TDCCh.erase(TDCCh.begin() + indexMaxTDCTS);
-                  vector<int>(TDCCh).swap(TDCCh);
-                  TDCTS.erase(TDCTS.begin() + indexMaxTDCTS);
-                  vector<double>(TDCTS).swap(TDCTS);
-                  index.erase(index.begin() + indexMaxTDCTS);
-                  vector<int>(index).swap(index);
-                }
-                else {
-                  TDCNHits -= 1;
-                  cluster[index[indexMinTDCTS]] = false;
-                  TDCCh.erase(TDCCh.begin() + indexMinTDCTS);
-                  vector<int>(TDCCh).swap(TDCCh);
-                  TDCTS.erase(TDCTS.begin() + indexMinTDCTS);
-                  vector<double>(TDCTS).swap(TDCTS);
-                  index.erase(index.begin() + indexMinTDCTS);
-                  vector<int>(index).swap(index);
-                }
-              }
-            }
-            else {
-              cluster[index[0]] = false;
-              outTDCCh->push_back(inData.TDCCh->at(index[0]));
-              outTDCTS->push_back(inData.TDCTS->at(index[0]));
-              *outTDCNHits += 1;
-              exit = true;
-            }
-          }
-        }
-        else {
-          cluster[h] = false;
-          outTDCCh->push_back(inData.TDCCh->at(h));
-          outTDCTS->push_back(inData.TDCTS->at(h));
-          *outTDCNHits += 1;
-        }
-      }
-      else {
-//        cout << inData.TDCCh->at(h) << "  " << inData.TDCCh->at(h+1) << endl;
-        cluster[h] = false;
-        TDCNHits += 1;
-        TDCCh.push_back(inData.TDCCh->at(h));
-        TDCTS.push_back(inData.TDCTS->at(h));
-        index.push_back(h);
-      }
-    }
-    for(int h = 0; h < inData.TDCNHits; h++) {
-      if(cluster[h] == true) {
-        hBegin = h;
-        TDCCh.clear();
-        TDCTS.clear();
-        index.clear();
-        TDCNHits = 0;
-        exit = false;
-        break;
-      }
-    }
-  }
-} 
-
   /* Set functions. */ 
 //------------------------------------------------------------------------------
 bool Analysis::setParam(double *param, int numParam) 
@@ -173,12 +36,12 @@ bool Analysis::setParam(double *param, int numParam)
 /* Analysis functions. */ 
 //------------------------------------------------------------------------------
 
-int Analysis::francois()
+int Analysis::example()
 {
   
   AData data; 
-  data.TDCCh = new vector<int>; // List of hits and their channels
-  data.TDCTS = new vector<double>; // List of the corresponding time stamps
+  data.TDCCh = new vector<int>;
+  data.TDCTS = new vector<double>;
   data.TDCCh->clear();
   data.TDCTS->clear();
 
@@ -188,7 +51,50 @@ int Analysis::francois()
     int isRunFile = setRunFile(i);
     if(!isRunFile)
       return -1;
-    string nameFile = getDaqName(i); // Don´t use the dots in file name only .root 
+    string nameFile = getDaqName(i);
+    
+    // In case if exist CAEN - get value from CAEN file
+    // another way - card file
+    double voltage = getVoltage();
+//    double current = getCurrent();
+//    double thershold = getThreshold();
+//    double source = getSource();
+
+
+    int numEntries = getEntries();
+    if(!numEntries)
+      return -1;
+    
+    for(int e = 0; e < numEntries; e++) {
+      bool isGetEvent = getEvent(e, &data.TDCNHits, data.TDCCh, data.TDCTS);
+      if(!isGetEvent)
+        return 0;
+      for(int h = 0; h < data.TDCNHits; h++) {
+        // loop for hits
+        cout << "TDCTS=" << data.TDCTS->at(h) 
+            << " TDCCh=" << data.TDCCh->at(h) << endl;
+      }
+    }
+  }
+  return 1;
+}
+
+int Analysis::francois()
+{
+  
+  AData data; 
+  data.TDCCh = new vector<int>;
+  data.TDCTS = new vector<double>;
+  data.TDCCh->clear();
+  data.TDCTS->clear();
+
+  int numFiles = getNumFiles();
+  for(int i = 0; i < numFiles; i++) {
+
+    int isRunFile = setRunFile(i);
+    if(!isRunFile)
+      return -1;
+    string nameFile = getDaqName(i);
     double voltage = getVoltage();
 
     int numEntries = getEntries();
@@ -199,16 +105,17 @@ int Analysis::francois()
       bool isGetEvent = getEvent(e, &data.TDCNHits, data.TDCCh, data.TDCTS);
       if(!isGetEvent)
         return 0;
-
       for(int h = 0; h < data.TDCNHits; h++) {
-
+        // loop for hits
+        cout << "TDCTS=" << data.TDCTS->at(h) 
+            << " TDCCh=" << data.TDCCh->at(h) << endl;
       }
     }
   }
   return 1;
 }
 
-int Analysis::general() 
+int Analysis::kGenStudy() 
 {
   int numCh = getNumCh();
   double minCh = getMinCh();
@@ -381,7 +288,10 @@ int Analysis::general()
         }
       }
       
-      clustering(param_[2], param_[3], data, &out.TDCNHits, out.TDCCh, out.TDCTS);
+     KCluster kCluster;
+     kCluster.clustering(param_[2], param_[3], 
+                         data.TDCNHits, *data.TDCCh, *data.TDCTS, 
+                         &out.TDCNHits, out.TDCCh, out.TDCTS);
       profileNHitsCluster->Fill(out.TDCNHits); 
       for(int h = 0; h < out.TDCNHits; h++) {
         profileStripCluster->Fill(out.TDCCh->at(h));
@@ -455,21 +365,17 @@ int Analysis::general()
 * \brief Loop function for choose the type of analysis and run it.
 *
 * \inputs: char* nameType
-* Types:
-* 1. General analysis: general
-* 2. Plot hits profile: hPro
-* 3. Plot time profile: tPro 
-* 4. Plot efficincy: eff
-* \return: bool: true - good run; false - run with errors.   
+* \return: int: true(1) - good run; false(0) - run with errors.   
 */
-bool Analysis::loop(char* nameType)
+int Analysis::loop(char* nameType)
 {
- if(strncmp(nameType, "general", 7) == 0) {
-   int isGeneral = general();
- }
- if(strncmp(nameType, "francois", 8) == 0) {
-   int isGeneral = general();
-  }
-  return true;
+   int isRun = 0;;
+ if(strncmp(nameType, "kGenStudy", 9) == 0)
+   isRun = kGenStudy();
+ if(strncmp(nameType, "francois", 8) == 0)
+   isRun = francois();
+ if(strncmp(nameType, "example", 7) == 0)
+   isRun = example();
+  return isRun;
 }
 //------------------------------------------------------------------------------

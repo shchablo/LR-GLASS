@@ -14,11 +14,7 @@ THR-HV - Number of line with value for thr and volt should be same with Number o
 #INFORMATION END.
 
 #TYPE:
--type=general
--lCorr=6
--hCorr=6
--rangeSpace=1
--rangeTime=12
+-type=example
 #TYPE END.
 
 #THR-HV:

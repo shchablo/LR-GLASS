@@ -1,0 +1,117 @@
+#INFORMATION:
+
+version: 16.06.2016
+You can find code: https://github.com/shchablo/LR-GLASS
+
+-firstCh=1000 - first channel for read
+-lastCh=1127 -  last channel for read
+-ch=1036
+-ch=1056
+...
+-ch=10[N] - channels for mask.
+
+THR-HV - Number of line with value for thr and volt should be same with Number of files for read.
+#INFORMATION END.
+
+#TYPE:
+-type=francois
+#TYPE END.
+
+#THR-HV:
+0mV_0V
+#THR-HV END.
+
+#DAQ FILES:
+/home/shchablo/Downloads/id1282/Scan001282_Run20160605183023_HV1_DAQ.root
+/home/shchablo/Downloads/id1282/Scan001282_Run20160605185556_HV2_DAQ.root
+/home/shchablo/Downloads/id1282/Scan001282_Run20160605190221_HV3_DAQ.root
+/home/shchablo/Downloads/id1282/Scan001282_Run20160605190844_HV4_DAQ.root
+/home/shchablo/Downloads/id1282/Scan001282_Run20160605191509_HV5_DAQ.root
+/home/shchablo/Downloads/id1282/Scan001282_Run20160605192134_HV6_DAQ.root
+/home/shchablo/Downloads/id1282/Scan001282_Run20160605192757_HV7_DAQ.root
+/home/shchablo/Downloads/id1282/Scan001282_Run20160605193422_HV8_DAQ.root
+#DAQ FILES END.
+
+#CAEN FILES:
+/home/shchablo/Downloads/id1282/Scan001282_Run20160605182100_HV1_CAEN.root
+/home/shchablo/Downloads/id1282/Scan001282_Run20160605185137_HV2_CAEN.root
+/home/shchablo/Downloads/id1282/Scan001282_Run20160605185802_HV3_CAEN.root
+/home/shchablo/Downloads/id1282/Scan001282_Run20160605190426_HV4_CAEN.root
+/home/shchablo/Downloads/id1282/Scan001282_Run20160605191050_HV5_CAEN.root
+/home/shchablo/Downloads/id1282/Scan001282_Run20160605191715_HV6_CAEN.root
+/home/shchablo/Downloads/id1282/Scan001282_Run20160605192339_HV7_CAEN.root
+/home/shchablo/Downloads/id1282/Scan001282_Run20160605193004_HV8_CAEN.root
+#CAEN FILES END.
+
+#MASK:
+-firstW=3000
+-lastW=3063
+-ch=3016
+-ch=3017
+-ch=3018
+-ch=3019
+-ch=3020
+-ch=3021
+-ch=3022
+-ch=3023
+-ch=3024
+-ch=3025
+-ch=3026
+-ch=3027
+-ch=3028
+-ch=3029
+-ch=3030
+-ch=3031
+-ch=3048
+-ch=3049
+-ch=3050
+-ch=3051
+-ch=3052
+-ch=3053
+-ch=3054
+-ch=3055
+-ch=3056
+-ch=3057
+-ch=3058
+-ch=3059
+-ch=3060
+-ch=3061
+-ch=3062
+-ch=3063
+#MASK END.
+
+#MAP:
+3000_0
+3001_1
+3002_2
+3003_3
+3004_4
+3005_5
+3006_6
+3007_7
+3008_8
+3009_9
+3010_10
+3011_11
+3012_12
+3013_13
+3014_14
+3015_15
+3032_16
+3033_17
+3034_18
+3035_19
+3036_20
+3037_21
+3038_22
+3039_23
+3040_24
+3041_25
+3042_26
+3043_27
+3044_28
+3045_29
+3046_30
+3047_31
+#MAP END.
+
