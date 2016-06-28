@@ -466,6 +466,7 @@ bool Analysis::loop(char* nameType)
 {
  if(strncmp(nameType, "general", 7) == 0) {
    int isGeneral = general();
+ }
  if(strncmp(nameType, "francois", 8) == 0) {
    int isGeneral = general();
   }
