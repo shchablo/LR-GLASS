@@ -1,17 +1,19 @@
-#include "OutFileRoot.hh"
+#include "CMSRoot.hh"
 
-/*! \fn OutFileRoot
+/* Constructor, destructor. */ 
+//------------------------------------------------------------------------------
+/*! \fn CMSRoot
 * \brief   constructtor
 */
-OutFileRoot::OutFileRoot()
+CMSRoot::CMSRoot()
 {
     isOutFile_ = false;
 }
 
-/*! \fn ~OutFileRoot
+/*! \fn ~CMSRoot
 * \brief  destructor
 */
-OutFileRoot::~OutFileRoot()
+CMSRoot::~CMSRoot()
 {
   if(isOutFile_) {
     outTree_->Delete();
@@ -19,7 +21,10 @@ OutFileRoot::~OutFileRoot()
     outFile_->Delete();
   }
 }
+//------------------------------------------------------------------------------
 
+/* Set functions. */ 
+//------------------------------------------------------------------------------
 /*! \fn setOutputFile
 * \brief Function for set output file.
 *
@@ -28,7 +33,7 @@ OutFileRoot::~OutFileRoot()
 *
 * \return bool - check tag
 */
-bool OutFileRoot::setOutputFile(char *outputFileName, char *outputTreeName)
+bool CMSRoot::setOutputFile(char *outputFileName, char *outputTreeName)
 {
   outFile_ = new TFile(outputFileName, "UPDATE");
   if(!outFile_)
@@ -47,23 +52,26 @@ bool OutFileRoot::setOutputFile(char *outputFileName, char *outputTreeName)
 * \param  string branchName - neame of branch
 * \return bool - check tag
 */
-bool OutFileRoot::setBranch(double *data, string branchName)
+bool CMSRoot::setBranch(double *data, string branchName)
 {
   if(!isOutFile_)
     return false;
   outTree_->Branch(branchName.c_str(), &data, branchName.c_str());
   return true;
 }
+//------------------------------------------------------------------------------
 
-/*! \fn writeGraph
+/* Functions */ 
+//------------------------------------------------------------------------------
+/*! \fn writeObject
 * \brief Function for write TGraph in folder.
 *
 * \param  string dirName - name of folder
-* \param  TGraph *graph - TGraph
+* \param  TObject *object
 *
 * \return bool - check tag
 */
-bool OutFileRoot::writeObject(string dirName, TObject *object)
+bool CMSRoot::writeObject(string dirName, TObject *object)
 {
   if(!outFile_->GetDirectory(dirName.c_str())) {
     outFile_->mkdir(dirName.c_str());
@@ -72,9 +80,10 @@ bool OutFileRoot::writeObject(string dirName, TObject *object)
   else
     outFile_->cd(dirName.c_str());
 
-//    if(outFile_->FindObject(graph->GetName()))
-//     return false;
+    if(outFile_->FindObject(object->GetName()))
+     return false;
 
   object->Write();
   return true;
 }
+//------------------------------------------------------------------------------

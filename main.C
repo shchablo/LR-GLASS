@@ -33,17 +33,12 @@ int main(int argc, char* argv[])
   char outputFileName[128] = "none";
   char outputTreeName[128] = "default";
   char inputTextFile[128] = "default.txt";
-  char dirName[128] = "";
-  char plotName[128] = "";
+  char plotName[128] = "default";
 
   strcpy(outputFileName, argv[1]);
   strcpy(inputTextFile, argv[2]);
   if(argc == 4)
-    strcpy(dirName, argv[3]);
-  if(argc == 5) {
-    strcpy(dirName, argv[3]);
-    strcpy(plotName, argv[4]);
-  }
+    strcpy(plotName, argv[3]);
   Configure configure;
 
   /* get type and parameters for type */
@@ -55,7 +50,7 @@ int main(int argc, char* argv[])
   char **nameParam;
   nType = configure.getType(inputTextFile, nameType);
   if(nType == 0)
-    return 0;
+    return 1;
   numParam = configure.getNumParam(inputTextFile);
   param = new double[numParam];
   nameParam = new char*[numParam];
@@ -64,30 +59,36 @@ int main(int argc, char* argv[])
   configure.getParam(inputTextFile, param, nameParam);
   /* END. */  
   
-  /* get files for read */
+  /* get DAQ files for read */
   /* BEGIN: */
-  int numInFiles = 0;
-  char **inputFileNames;
-    numInFiles = configure.getNumFiles(inputTextFile);
-  if(numInFiles == 0)
-    return 0;
-  inputFileNames = new char*[numInFiles];
-  for(int i = 0; i < numInFiles; i++)
-    inputFileNames[i] = new char[256];
-  configure.getNamesFiles(inputTextFile, inputFileNames, numInFiles);
-  /* END. */  
-  
-  /* get files for read */
-  /* BEGIN: */
-  double voltage[numInFiles];
-  double threshold[numInFiles];
-  int isThrVol = configure.getThrVolt(inputTextFile, threshold, voltage, numInFiles);
-  if(!isThrVol) {
-    cout << "ERROR: Check numbers of files and numbers of voltage and threshold values. It shond be the same." << endl;
+  int daqNumInFiles = 0;
+  char **daqInputFileNames;
+    daqNumInFiles = configure.getDaqNumFiles(inputTextFile);
+  if(daqNumInFiles == 0)
     return 1;
-  }
+  daqInputFileNames = new char*[daqNumInFiles];
+  for(int i = 0; i < daqNumInFiles; i++)
+    daqInputFileNames[i] = new char[256];
+  configure.getDaqNamesFiles(inputTextFile, daqInputFileNames, daqNumInFiles);
   /* END. */  
   
+  /* get CAEN files for read */
+  /* BEGIN: */
+  int caenNumInFiles = 0;
+  char **caenInputFileNames;
+    caenNumInFiles = configure.getCaenNumFiles(inputTextFile);
+  if(caenNumInFiles == 0)
+    return 1;
+  caenInputFileNames = new char*[caenNumInFiles];
+  for(int i = 0; i < caenNumInFiles; i++)
+    caenInputFileNames[i] = new char[256];
+  configure.getCaenNamesFiles(inputTextFile, caenInputFileNames, caenNumInFiles);
+  /* END. */  
+ 
+  if(daqNumInFiles != caenNumInFiles) {
+    cout << "ERROR: Check files." << endl;
+    return 1; 
+  }
   /* get mask */
   /* BEGIN: */
 int numChMask = configure.getMaskNumParam(inputTextFile);
@@ -109,25 +110,29 @@ int numChMask = configure.getMaskNumParam(inputTextFile);
   cout <<"#RUN TYPE: " << nameType << endl;
   for(int i = 0; i < numParam; i++)
     cout << nameParam[i] << "=" << param[i] << endl;
-  cout <<"#INPUT FILES:"                                                << endl;
-  for(int i = 0; i < numInFiles; i++)
-    cout << "inF[" << i << "]=" << inputFileNames[i] << endl;
+  cout <<"#DAQ INPUT FILES:"                                                << endl;
+  for(int i = 0; i < daqNumInFiles; i++)
+    cout << "inF[" << i << "]=" << daqInputFileNames[i] << endl;
+  cout <<"#CAEN INPUT FILES:"                                                << endl;
+  for(int i = 0; i < caenNumInFiles; i++)
+    cout << "inF[" << i << "]=" << caenInputFileNames[i] << endl;
   cout <<"#MASK:"                                                       << endl;
   cout << "-firstCh=" << firstCh << endl;
   cout << "-lastCh=" << lastCh << endl;
   for(int i = 0; i < numChMask; i++)
     cout << "-ch[" << i << "]=" << mask[i] << endl;
+  cout <<"#MAP:"                                                       << endl;
+  for(int i = 0; i < numChMap; i++)
+    cout << "-TDC=" << map[i].TDC << " " << "-NEW=" << map[i].real << endl;
   cout <<"#OUTPUT FILES:"                                                << endl;
   cout << "outF=" << outputFileName << endl;
   cout <<"#------------------------------------------------------------" << endl;
 
     Analysis analysis;
 
-    analysis.setInputFileNames(inputFileNames, numInFiles);
-    analysis.setDirName(dirName);
+    analysis.setDaqInputFileNames(daqInputFileNames, daqNumInFiles);
+    analysis.setCaenInputFileNames(caenInputFileNames, caenNumInFiles);
     analysis.setPlotName(plotName);
-    analysis.setThreshold(threshold);
-    analysis.setVoltage(voltage);
     analysis.setMask(firstCh, lastCh, mask, numChMask);
     analysis.setMap(map, numChMap);
     analysis.setParam(param, numParam);

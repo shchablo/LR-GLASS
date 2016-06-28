@@ -1,5 +1,7 @@
 #include "Configure.hh"
 
+/* Constructor, destructor. */ 
+//------------------------------------------------------------------------------
 /*! \fn Configure
 * \brief   constructtor
 */
@@ -13,7 +15,10 @@ Configure::Configure()
 Configure::~Configure()
 {
 }
+//------------------------------------------------------------------------------
 
+/* Get functions. */ 
+//------------------------------------------------------------------------------
 int Configure::getType(char* inputTextFile, char* nameType) 
 {
   int numType = 0;
@@ -99,7 +104,7 @@ void Configure::getParam(char* inputTextFile, double* param, char** nameParam)
   else cout << "#ERROR: Unable to open card file" << endl;
 }
 
-int Configure::getNumFiles(char* inputTextFile) 
+int Configure::getDaqNumFiles(char* inputTextFile) 
 {
   int numInFiles = 0;
   bool read = false;
@@ -109,11 +114,11 @@ int Configure::getNumFiles(char* inputTextFile)
   {
     while (getline(myfile, line))
     {
-      if(strncmp(line.c_str(),"#FILES END.", 10) == 0)
+      if(strncmp(line.c_str(),"#DAQ FILES END.", 14) == 0)
         read = false;
       if(read)
       numInFiles++;
-      if(strncmp(line.c_str(), "#FILES:", 7) == 0)
+      if(strncmp(line.c_str(), "#DAQ FILES:", 11) == 0)
         read = true;
     }
     myfile.close();
@@ -122,7 +127,30 @@ int Configure::getNumFiles(char* inputTextFile)
   return numInFiles;
 }
 
-void Configure::getNamesFiles(char* inputTextFile, char** inputFileNames, int numInFiles) 
+int Configure::getCaenNumFiles(char* inputTextFile) 
+{
+  int numInFiles = 0;
+  bool read = false;
+  string line;
+  ifstream myfile (inputTextFile);
+  if (myfile.is_open())
+  {
+    while (getline(myfile, line))
+    {
+      if(strncmp(line.c_str(),"#CAEN FILES END.", 15) == 0)
+        read = false;
+      if(read)
+      numInFiles++;
+      if(strncmp(line.c_str(), "#CAEN FILES:", 12) == 0)
+        read = true;
+    }
+    myfile.close();
+  }
+  else cout << "#ERROR: Unable to open card file or file has't pathes for data files" << endl;
+  return numInFiles;
+}
+
+void Configure::getDaqNamesFiles(char* inputTextFile, char** inputFileNames, int numInFiles) 
 {
  int i = 0;
   bool read = false;
@@ -132,7 +160,7 @@ void Configure::getNamesFiles(char* inputTextFile, char** inputFileNames, int nu
   {
     while (getline(myfile, line))
     {
-      if(strncmp(line.c_str(),"#FILES END.", 10) == 0)
+      if(strncmp(line.c_str(),"#DAQ FILES END.", 14) == 0)
         read = false;
       if(read) {
         if(i < numInFiles) {
@@ -140,7 +168,33 @@ void Configure::getNamesFiles(char* inputTextFile, char** inputFileNames, int nu
           i++;
         }
       }
-    if(strncmp(line.c_str(), "#FILES:", 7) == 0)
+    if(strncmp(line.c_str(), "#DAQ FILES:", 11) == 0)
+      read = true;
+    }
+    myfile.close();
+  }
+  else cout << "#ERROR: Unable to open card file" << endl;
+}
+
+void Configure::getCaenNamesFiles(char* inputTextFile, char** inputFileNames, int numInFiles) 
+{
+ int i = 0;
+  bool read = false;
+  string line;
+  ifstream myfile (inputTextFile);
+  if (myfile.is_open())
+  {
+    while (getline(myfile, line))
+    {
+      if(strncmp(line.c_str(),"#CAEN FILES END.", 15) == 0)
+        read = false;
+      if(read) {
+        if(i < numInFiles) {
+          strcpy(inputFileNames[i], line.c_str());
+          i++;
+        }
+      }
+    if(strncmp(line.c_str(), "#CAEN FILES:", 12) == 0)
       read = true;
     }
     myfile.close();
@@ -273,3 +327,4 @@ void Configure::getMap(char* inputTextFile, MAP* map)
   }
   else cout << "#ERROR: Unable to open card file" << endl;
 }
+//------------------------------------------------------------------------------

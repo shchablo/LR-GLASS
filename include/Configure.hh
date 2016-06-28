@@ -1,4 +1,6 @@
-//-------------------------------------------------------------
+//------------------------------------------------------------------------------
+/* INFORMATION: */
+//------------------------------------------------------------------------------
 #ifndef CONFIGURE_h
 #define CONFIGURE_h
 
@@ -15,22 +17,30 @@ class Configure
 {
 public:
 
-  //! constructor
+  /* Constructor, destructor. */ 
+  //----------------------------------------------------------------------------
   Configure();
-
-  //! destructor
   virtual ~Configure();
+  //----------------------------------------------------------------------------
 
+  /* Get functions. */ 
+  //----------------------------------------------------------------------------
   void getParam(char* inputTextFile, double* param, char** nameParam);
   int getType(char* inputTextFile, char* nameType);
   int getNumParam(char* inputTextFile);
-  int getNumFiles(char* inputTextFile);
-  void getNamesFiles(char* inputTextFile, char** inputFileNames, int numInFiles); 
-  int getThrVolt(char* inputTextFile, double* thr, double* voltage, int numInFiles);
+  int getDaqNumFiles(char* inputTextFile);
+  void getDaqNamesFiles(char* inputTextFile, 
+                        char** inputFileNames, int numInFiles); 
+  int getCaenNumFiles(char* inputTextFile);
+  void getCaenNamesFiles(char* inputTextFile, 
+                         char** inputFileNames, int numInFiles); 
+  int getThrVolt(char* inputTextFile, 
+                 double* thr, double* voltage, int numInFiles);
   int getMaskNumParam(char* inputTextFile);
   void getMask(char* inputTextFile, int* mask, int* firstCh, int* lastCh);
   void getMap(char* inputTextFile, MAP* map);
+  //----------------------------------------------------------------------------
 };
 
 #endif
-//-------------------------------------------------------------
+//------------------------------------------------------------------------------

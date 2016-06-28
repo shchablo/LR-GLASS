@@ -1,59 +1,57 @@
 //------------------------------------------------------------------------------
 /* INFORMATION: */
 //------------------------------------------------------------------------------
-#ifndef ANALYSIS_h
-#define ANALYSIS_h
+#ifndef CMSROOT_h
+#define CMSROOT_h
 
+/* ROOT includes */
 //------------------------------------------------------------------------------
-#include <CMSRoot.hh>
-#include <WebDcs.hh>
+#include <TROOT.h>
+#include <TFile.h>
+#include <TTree.h>
+#include <TDirectory.h>
+#include <TObject.h>
+#include <TH1D.h>
+#include <TH2D.h>
+#include <TF1.h>
+#include <TString.h>
 //------------------------------------------------------------------------------
 
+/* C++ includes */
 //------------------------------------------------------------------------------
-struct AData {
-    int            TDCNHits;  // Number of hits in event i
-    vector<int>    *TDCCh;    // List of channels giving hits per event
-    vector<double>  *TDCTS;   // List of the corresponding time stamps
-};
-
+#include <string>
+#include <iostream>
+using namespace std;
 //------------------------------------------------------------------------------
 
-class Analysis : public CMSRoot, public WebDcs
+class CMSRoot
 {
 public:
 
   /* Constructor, destructor. */ 
   //----------------------------------------------------------------------------
-  Analysis();
-  virtual ~Analysis();
+  CMSRoot();
+  virtual ~CMSRoot();
   //----------------------------------------------------------------------------
 
   /* Set functions. */ 
   //----------------------------------------------------------------------------
-  void setPlotName(char *plotName) {plotName_ = plotName;}
-  bool setParam(double *param, int numParam);
+  bool setOutputFile(char *outputFileName, char *outputTreeName);
+  bool setBranch(double *data, string branchName);
   //----------------------------------------------------------------------------
 
-  void clustering(int spaceRange, double timeRange, 
-                  AData data, 
-                  int *TDCNHits, vector<int> *TDCCh, vector<double> *TDCTS);
-  /* Loop function */ 
   //----------------------------------------------------------------------------
-   bool loop(char* nameType);
+  bool writeObject(string dirName, TObject *object);
   //----------------------------------------------------------------------------
+
 protected:
 
-  char *plotName_;
-  
-  double *param_;
-  int numParam_;
-  bool isParam_;
+  bool isOutFile_;
+  TFile *outFile_;
+  TTree *outTree_;
 
-  /* Analysis functions. */ 
-  //----------------------------------------------------------------------------
-  int effProfile();
-  int general();
-  //----------------------------------------------------------------------------
+//char  *dirName_;
+//char  *plotName_;
 };
 #endif
 //------------------------------------------------------------------------------

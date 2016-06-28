@@ -1,15 +1,13 @@
 #include "Analysis.hh"
+
+/* Constructor, destructor. */ 
+//------------------------------------------------------------------------------
 /*! \fn Analysis
 * \brief   constructtor
 */
 Analysis::Analysis()
 {
-  isInputFileNames_ = false; numInFiles_ = -1;
   isParam_ = false; numParam_ = -1;
-  isThreshold_ = false;
-  isVoltage_ = false;
-  isMask_ = false; firstCh_ = 0; lastCh_ = 0; numChMask_ = 0;
-  isMap_ = false; numChMap_ = 0;
 }
 
 /*! \fn ~Analysis
@@ -18,681 +16,459 @@ Analysis::Analysis()
 Analysis::~Analysis()
 {
 }
-int Analysis::indexMinMax(int length, double* data, int flag)
+//------------------------------------------------------------------------------
+
+void Analysis::clustering(int spaceRange, double timeRange, 
+                          AData inData, int *outTDCNHits, vector<int> *outTDCCh, vector<double> *outTDCTS) 
 {
-    int index = 0;
-    double result = data[0];
-    for(int i = 1; i < length; i++) {
-        if(flag == -1) {
-            if(result > data[i]) {
-                result = data[i];
-                index = i;
+  *outTDCNHits = 0;
+  outTDCCh->clear();
+  outTDCTS->clear();
+  int tempCh = 0;
+  double tempTime = 0;
+  bool exit = false;
+  while(!exit) {
+   exit = true;
+   for(int i = 0; i < inData.TDCNHits - 1; i++)
+     if(inData.TDCCh->at(i) > inData.TDCCh->at(i+1)) {
+      tempCh = inData.TDCCh->at(i);
+      inData.TDCCh->at(i) = inData.TDCCh->at(i+1);
+      inData.TDCCh->at(i+1) = tempCh;
+      tempTime = inData.TDCTS->at(i);
+      inData.TDCTS->at(i) = inData.TDCTS->at(i+1);
+      inData.TDCTS->at(i+1) = tempCh;
+      exit = false;
+     }
+  }
+  int hBegin = 0;
+  bool cluster[inData.TDCNHits];
+  for(int h = 0; h < inData.TDCNHits; h++)
+    cluster[h] = true;
+  inData.TDCCh->push_back(std::numeric_limits<int>::max());
+  inData.TDCTS->push_back(0);
+  
+  int TDCNHits = 0;
+  vector<int> TDCCh; TDCCh.clear();
+  vector<double> TDCTS; TDCTS.clear();
+  vector<int> index; index.clear();
+  exit = false;
+  while(!exit) {
+    exit = true;
+    for(int h = hBegin; (h < inData.TDCNHits) && cluster[h]; h++) {
+      int hIndex = h+1;
+      for(int hh = hIndex; hh < inData.TDCNHits; hh++) {
+        if(cluster[hh] == true) {
+          hIndex = hh;
+          break;
+        }
+      }
+      if(inData.TDCCh->at(h) + spaceRange < inData.TDCCh->at(hIndex)) {
+        if(TDCNHits != 0) {
+          exit = false;
+          while(!exit) {
+            double minTDCTS = std::numeric_limits<double>::max();
+            double maxTDCTS = std::numeric_limits<double>::min();
+            int indexMinTDCTS = 0;
+            int indexMaxTDCTS = 0;
+            double meanTDCTS = 0;
+            double meanTDCCh = 0;
+            if(TDCNHits != 0) {
+              for(int hh = 0; hh < TDCNHits; hh++) {
+                meanTDCTS += TDCTS.at(hh);
+                meanTDCCh += TDCCh.at(hh);
+                if(minTDCTS > TDCTS.at(hh)) {
+                  minTDCTS = TDCTS.at(hh);
+                  indexMinTDCTS = hh;
+                }
+                if(maxTDCTS < TDCTS.at(hh)) {
+                  maxTDCTS = TDCTS.at(hh);
+                  indexMaxTDCTS = hh;
+                }
+              }
+              meanTDCTS = meanTDCTS/TDCNHits;
+              meanTDCCh = meanTDCCh/TDCNHits;
+              if(timeRange > (maxTDCTS - minTDCTS) || true) {
+                outTDCCh->push_back(meanTDCCh);
+                outTDCTS->push_back(meanTDCTS);
+                *outTDCNHits += 1;
+                exit = true;
+              }
+              else {
+                if(abs(maxTDCTS - meanTDCCh) > abs(meanTDCCh - minTDCTS)) {
+                  TDCNHits -= 1;
+                  cluster[index[indexMaxTDCTS]] = false;
+                  TDCCh.erase(TDCCh.begin() + indexMaxTDCTS);
+                  vector<int>(TDCCh).swap(TDCCh);
+                  TDCTS.erase(TDCTS.begin() + indexMaxTDCTS);
+                  vector<double>(TDCTS).swap(TDCTS);
+                  index.erase(index.begin() + indexMaxTDCTS);
+                  vector<int>(index).swap(index);
+                }
+                else {
+                  TDCNHits -= 1;
+                  cluster[index[indexMinTDCTS]] = false;
+                  TDCCh.erase(TDCCh.begin() + indexMinTDCTS);
+                  vector<int>(TDCCh).swap(TDCCh);
+                  TDCTS.erase(TDCTS.begin() + indexMinTDCTS);
+                  vector<double>(TDCTS).swap(TDCTS);
+                  index.erase(index.begin() + indexMinTDCTS);
+                  vector<int>(index).swap(index);
+                }
+              }
             }
+            else {
+              cluster[index[0]] = false;
+              outTDCCh->push_back(inData.TDCCh->at(index[0]));
+              outTDCTS->push_back(inData.TDCTS->at(index[0]));
+              *outTDCNHits += 1;
+              exit = true;
+            }
+          }
         }
         else {
-            if(result < data[i]) {
-                result = data[i];
-                index = i;
-            }
+          cluster[h] = false;
+          outTDCCh->push_back(inData.TDCCh->at(h));
+          outTDCTS->push_back(inData.TDCTS->at(h));
+          *outTDCNHits += 1;
         }
+      }
+      else {
+//        cout << inData.TDCCh->at(h) << "  " << inData.TDCCh->at(h+1) << endl;
+        cluster[h] = false;
+        TDCNHits += 1;
+        TDCCh.push_back(inData.TDCCh->at(h));
+        TDCTS.push_back(inData.TDCTS->at(h));
+        index.push_back(h);
+      }
     }
-    return index;
-}
-//-------------------------------------------------------
-int Analysis::setInputFileNames(char **inputFileNames, int numInFiles) 
-{
-  inputFileNames_ = inputFileNames;
-  numInFiles_ = numInFiles;
-  if(numInFiles_ > 0)
-    isInputFileNames_ = true;
-  else
-    return -10;
-  return 1;
-}
+    for(int h = 0; h < inData.TDCNHits; h++) {
+      if(cluster[h] == true) {
+        hBegin = h;
+        TDCCh.clear();
+        TDCTS.clear();
+        index.clear();
+        TDCNHits = 0;
+        exit = false;
+        break;
+      }
+    }
+  }
+} 
 
-int Analysis::setParam(double *param, int numParam) 
+  /* Set functions. */ 
+//------------------------------------------------------------------------------
+bool Analysis::setParam(double *param, int numParam) 
 {
   param_ = param;
   numParam_ = numParam;
   if(numParam > 0)
     isParam_ = true;
   else
-    return -20;
-  return 1;
+    return false;
+  return true;
 
 }
+//------------------------------------------------------------------------------
 
-void Analysis::setThreshold(double *threshold) 
-{
-  thr_ = threshold;
-  isThreshold_ = true;
-}
+/* Analysis functions. */ 
+//------------------------------------------------------------------------------
 
-void Analysis::setVoltage(double *voltage) 
+int Analysis::francois()
 {
-  volt_ = voltage;
-  isVoltage_ = true;
-}
-
-int  Analysis::setMask(int firstCh, int lastCh, int *mask, int numChMask) 
-{
-  if(lastCh - firstCh <= 0)
-    return -30;
-  for(int i = 0; i < numChMask; i++) {
-    if(mask[i] < firstCh || mask[i] > lastCh)
-      return -31;
-  }
-  firstCh_ = firstCh;
-  lastCh_ = lastCh;
-  mask_ = mask; 
-  numChMask_ = numChMask;
-  isMask_ = true;
-  return 1;
-}
-
-int  Analysis::setMap(MAP *map, int numChMap) 
-{
-  if(!isMask_)
-    return -40;
-  if(numChMap == lastCh_ - firstCh_ - numChMask_ + 1) {
-    map_ = map;
-    numChMap_ = numChMap;
-    isMap_ = true;
-  }
-  else
-    return -41;
-  int chMinMap = std::numeric_limits<int>::max();
-  int chMaxMap = 0;
-  for(int i = 0; i < numChMap; i++) {
-    if(chMinMap >= map_[i].real)
-      chMinMap = map_[i].real;
-    if(chMaxMap <= map_[i].real)
-      chMaxMap = map_[i].real;
-  }
-  chMinMap_ = chMinMap;
-  chMaxMap_ = chMaxMap;
-  return 1;
-}
-
-void Analysis::setDirName(char *dirName) 
-{
-  dirName_ = dirName;
-}
-
-void Analysis::setPlotName(char *plotName) 
-{
-  plotName_ = plotName;
-}
-//-------------------------------------------------------
-
-int Analysis::getEntries(char *inputFileName) 
-{
-  TFile   dataFile(inputFileName);
-  TTree*  dataTree = (TTree*)dataFile.Get("RAWData");
-  if(!dataTree)
-    return -1; // can't read file
-  RAWData data;
   
-  data.TDCCh = new vector<int>; //List of hits and their channels
-  data.TDCTS = new vector<float>; //List of the corresponding time stamps
+  AData data; 
+  data.TDCCh = new vector<int>; // List of hits and their channels
+  data.TDCTS = new vector<double>; // List of the corresponding time stamps
   data.TDCCh->clear();
   data.TDCTS->clear();
-  
-  dataTree->SetBranchAddress("EventNumber",    &data.iEvent);
-  dataTree->SetBranchAddress("number_of_hits", &data.TDCNHits);
-  dataTree->SetBranchAddress("TDC_channel",    &data.TDCCh);
-  dataTree->SetBranchAddress("TDC_TimeStamp",  &data.TDCTS);
-  
-  int nEntries = dataTree->GetEntries();
-  
-  return nEntries;
-}
 
-RAWData Analysis::getEvent(int nEvent, char *inputFileName) 
-{
-  RAWData data;
-  data.check = true;
-  TFile   dataFile(inputFileName);
-  TTree*  dataTree = (TTree*)dataFile.Get("RAWData");
-  if(!dataTree) {
-    data.check = false;
-    return data; // can't read file
-  }
-  
-  data.TDCCh = new vector<int>; //List of hits and their channels
-  data.TDCTS = new vector<float>; //List of the corresponding time stamps
-  data.TDCCh->clear();
-  data.TDCTS->clear();
-  
-  dataTree->SetBranchAddress("EventNumber",    &data.iEvent);
-  dataTree->SetBranchAddress("number_of_hits", &data.TDCNHits);
-  dataTree->SetBranchAddress("TDC_channel",    &data.TDCCh);
-  dataTree->SetBranchAddress("TDC_TimeStamp",  &data.TDCTS);
-  
-  //****************** MACRO ***************************************
-  dataTree->GetEntry(nEvent);
-  dataFile.Close();
-  return data;
-}
+  int numFiles = getNumFiles();
+  for(int i = 0; i < numFiles; i++) {
 
-RAWData Analysis::getData(RAWData *read) 
-{
-  RAWData data;
-  data.TDCCh = new vector<int>; data.TDCCh->clear();
-  data.TDCTS = new vector<float>; data.TDCTS->clear();
-  data.check = false;
-  data.TDCNHits = 0;
-  for(int i = 0; i < read->TDCNHits; i++) {
-    bool isHit = true;  
-    for(int j = 0; j < numChMask_; j++) {
-      if(read->TDCCh->at(i) == mask_[j] 
-         || (read->TDCCh->at(i) <= firstCh_ || read->TDCCh->at(i) >= lastCh_))
-        isHit = false;
-    }
-    if(isHit) {
-      data.TDCNHits += 1;
-      data.TDCTS->push_back(read->TDCTS->at(i));
-      int mapCh = 0; 
-      for(int j = 0; j < numChMap_; j++) {
-        if(read->TDCCh->at(i) == map_[j].TDC) {
-          mapCh =  map_[j].real;
-          break;
-        }
-      }
-      data.TDCCh->push_back(mapCh);
-    }
-  }
-  data.check = true;
-  return data; 
-}
+    int isRunFile = setRunFile(i);
+    if(!isRunFile)
+      return -1;
+    string nameFile = getDaqName(i); // Don´t use the dots in file name only .root 
+    double voltage = getVoltage();
 
-RAWData Analysis::Filter(RAWData *data) 
-{
-  RAWData filter;
-  filter.TDCCh = new vector<int>; filter.TDCCh->clear();
-  filter.TDCTS = new vector<float>; filter.TDCTS->clear();
-  filter.check = false;
-  filter.TDCNHits = 0;
-  for(int i = 0; i < data->TDCNHits; i++) {
-    int multiplicity = 0;
-    for(int h2 = 0; h2 < data->TDCNHits; h2++) {                                                                                   
-    if(i != h2 && data->TDCTS->at(i) + 6 >= data->TDCTS->at(h2) && data->TDCTS->at(i) <= data->TDCTS->at(h2) 
-            && (data->TDCCh->at(h2) <= data->TDCCh->at(i)-1 || data->TDCCh->at(h2) >= data->TDCCh->at(i)+1))
-        multiplicity += 1;
-}    
-    if(multiplicity <= 1) {
-      filter.TDCNHits += 1;
-      filter.TDCCh->push_back(data->TDCCh->at(i));
-      filter.TDCTS->push_back(data->TDCTS->at(i));
-    }
-  }
-  filter.check = true;
-  return filter; 
-}
-
-double Analysis::getCurrent(int index) 
-{
-   TFile dataFile(inputFileNames_[index]);
-   TH1F *h = (TH1F*)dataFile.Get("Imon_LYON-RE1-1-LRGRPC-00;1"); 
-
-  return double(h->GetMean());
-}
-
-int Analysis::getMinMaxTime(double binTime, double *minTime, double *maxTime, int *numBins) 
-{
-  int numEntries = getEntries(inputFileNames_[0]);
-  if(!numEntries)
-    return -1;
-
-  *minTime = std::numeric_limits<double>::max();
-  *maxTime = 0;
-  for(int i = 0; i < numEntries; i++) {
-    RAWData read = getEvent(i, inputFileNames_[0]);
-    if(!read.check)
-      return -100;
-     RAWData data = getData(&read);
-    if(!data.check)
-      return -101;
-
-    for(int j = 0; j < data.TDCNHits; j++) {
-      if(*minTime >= data.TDCTS->at(j))
-        *minTime = data.TDCTS->at(j);
-      if(*maxTime <= data.TDCTS->at(j))
-        *maxTime = data.TDCTS->at(j);
-    }
-  }
-  *numBins = int((*maxTime - *minTime)/binTime);
-  return 1;
-}
-
-double Analysis::getMeanMoreTime(int hitIndex, RAWData *data)
-{
-  double meanMoreTime = 0;
-  double count = 0;
-  for(int i = 0; i < data->TDCNHits; i++) {
-    if(data->TDCTS->at(i) > data->TDCTS->at(hitIndex)) {
-      meanMoreTime += data->TDCTS->at(i); 
-      count += 1;
-    }
-  }
-  return meanMoreTime/count;
-}
-
-double Analysis::getMeanLessTime(int hitIndex, RAWData *data)
-{
-  double meanMoreTime = 0;
-  double count = 0;
-  for(int i = 0; i < data->TDCNHits; i++) {
-    if(data->TDCTS->at(i) < data->TDCTS->at(hitIndex)) {
-      meanMoreTime += data->TDCTS->at(i); 
-      count += 1;
-    }
-  }
-  return meanMoreTime/count;
-}
-
-int Analysis::hitsProfile() 
-{
-
-  TH1F *profileStrip = new TH1F("hitsProfile", "hitsProfile", numChMap_, chMinMap_, chMaxMap_);
-  profileStrip->GetXaxis()->SetTitle("strip");
-  profileStrip->GetYaxis()->SetTitle("number of hits");
-  
-  TH1F *profileStripFilter = new TH1F("hitsProfileFilter", "hitsProfileFilter", numChMap_, chMinMap_, chMaxMap_);
-  profileStripFilter->GetXaxis()->SetTitle("strip");
-  profileStripFilter->GetYaxis()->SetTitle("number of hits");
-
-  
-//  int numEntries = getEntries(inputFileNames_[0]);
-  int numEntries = 4000;
-  if(!numEntries)
-    return -1;
-
-  for(int i = 0; i < numEntries; i++) {
-    RAWData read = getEvent(i, inputFileNames_[0]);
-    if(!read.check)
-      return -100;
-     RAWData data = getData(&read);
-    if(!data.check)
-      return -101;
-     RAWData filter = Filter(&data);
-    if(!filter.check)
-      return -101;
-
-    for(int j = 0; j < data.TDCNHits; j++)
-      profileStrip->Fill(data.TDCCh->at(j));
-    for(int j = 0; j < filter.TDCNHits; j++)
-      profileStripFilter->Fill(filter.TDCCh->at(j));
-    
-  }
-
-  TString dir(dirName_);
-  dir+="_"; dir+="param_";
-  const char* dirc=dir.Data();
-
-  writeObject(dirc, profileStrip);
-  writeObject(dirc, profileStripFilter);
-
-  return 1;
-}
-
-int Analysis::timeProfile() 
-{
-
-  double binTime = 1;
-  double minTime = 0;
-  double maxTime = 0;
-  int numBins = 0;
-  getMinMaxTime(binTime, &minTime, &maxTime, &numBins);
-  TH1F *profileTime = new TH1F("timeProfile", "timeProfile", numBins, minTime, maxTime);
-  profileTime->GetXaxis()->SetTitle("time");
-  profileTime->GetYaxis()->SetTitle("number of hits");
-  TH1F *profileTimeFilter = new TH1F("timeProfileFilter", "timeProfileFilter", numBins, minTime, maxTime);
-  profileTimeFilter->GetXaxis()->SetTitle("time");
-  profileTimeFilter->GetYaxis()->SetTitle("number of hits");
-
-  
-  int numEntries = getEntries(inputFileNames_[0]);
-  if(!numEntries)
-    return -1;
-
-  for(int i = 0; i < numEntries; i++) {
-    RAWData read = getEvent(i, inputFileNames_[0]);
-    if(!read.check)
-      return -100;
-     RAWData data = getData(&read);
-    if(!data.check)
-      return -101;
-     RAWData filter = Filter(&data);
-    if(!filter.check)
-      return -101;
-
-    for(int j = 0; j < data.TDCNHits; j++) {
-      profileTime->Fill(data.TDCTS->at(j));
-    }
-      profileTimeFilter->Fill(data.TDCNHits);
-
-    for(int j = 0; j < filter.TDCNHits; j++) {
-//      profileTimeFilter->Fill(filter.TDCTS->at(j));
-    }
-  }
-
-  TString dir(dirName_);
-  dir+="_"; dir+="param_";
-  const char* dirc=dir.Data();
-
-  writeObject(dirc, profileTime);
-  writeObject(dirc, profileTimeFilter);
-
-  return 1;
-}
-
-int Analysis::diffTimeProfile() 
-{
-}
-
-int Analysis::meanMoreTimeProfile() 
-{
-
-  double binTime = 2;
-  double minTime = 0;
-  double maxTime = 0;
-  int numBins = 0;
-  getMinMaxTime(binTime, &minTime, &maxTime, &numBins);
-  TH1F *profileTime = new TH1F("TimeProfile", "TimeProfile", numBins, minTime, maxTime);
-  profileTime->GetXaxis()->SetTitle("time, ns");
-  profileTime->GetYaxis()->SetTitle("hits");
-  TH1F *profileStrip = new TH1F("StripProfile", "StripProfile", numChMap_, chMinMap_, chMaxMap_);
-  profileStrip->GetXaxis()->SetTitle("strip");
-  profileStrip->GetYaxis()->SetTitle("hits");
-  
-  TH1F *profileTimeFilter = new TH1F("TimeProfile_1", "TimeProfile_1", numBins, minTime, maxTime);
-  profileTimeFilter->GetXaxis()->SetTitle("time, ns");
-  profileTimeFilter->GetYaxis()->SetTitle("hits");
-  TH1F *profileStripFilter = new TH1F("StripProfile_1", "StripProfile_1", numChMap_, chMinMap_, chMaxMap_);
-  profileStripFilter->GetXaxis()->SetTitle("strip");
-  profileStripFilter->GetYaxis()->SetTitle("hits");
-
-  TH1F *profileClaster = new TH1F("ProfileClaster", "ProfileClaster", numChMap_, 0, numChMap_);
-  profileClaster->GetXaxis()->SetTitle("count hits");
-  profileClaster->GetYaxis()->SetTitle("hits");
-  
-  TH1F *profileTimeFilter2 = new TH1F("TimeProfile_2", "TimeProfile_2", numBins, minTime, maxTime);
-  profileTimeFilter2->GetXaxis()->SetTitle("time, ns");
-  profileTimeFilter2->GetYaxis()->SetTitle("hits");
-  TH1F *profileStripFilter2 = new TH1F("StripProfile_2", "StripProfile_2", numChMap_, chMinMap_, chMaxMap_);
-  profileStripFilter2->GetXaxis()->SetTitle("strip");
-  profileStripFilter2->GetYaxis()->SetTitle("hits");
-  TH1F *profileClasterFilter = new TH1F("ProfileClaster_1", "ProfileClaster_1", numChMap_, 0, numChMap_);
-  profileClasterFilter->GetXaxis()->SetTitle("count hits");
-  profileClasterFilter->GetYaxis()->SetTitle("hits");
-  
-  TH1F *profileTimeFilter3 = new TH1F("TimeProfile_3", "TimeProfile_3", numBins, minTime, maxTime);
-  profileTimeFilter3->GetXaxis()->SetTitle("time, ns");
-  profileTimeFilter3->GetYaxis()->SetTitle("hits");
-  TH1F *profileStripFilter3 = new TH1F("StripProfile_3", "StripProfile_3", numChMap_, chMinMap_, chMaxMap_);
-  profileStripFilter3->GetXaxis()->SetTitle("strip");
-  profileStripFilter3->GetYaxis()->SetTitle("hits");
-  
-  TH1F *profileTimeCh[numChMap_];
-  TH1F *profileTimeCh2[numChMap_];
-  for(int i = 0; i < numChMap_; i++) {
-    profileTimeCh[i] = new TH1F(Form("profileTime_ch%d",i), Form("profileTime_ch%d",i), numBins, minTime, maxTime);
-    profileTimeCh[i]->GetXaxis()->SetTitle("time");
-    profileTimeCh[i]->GetYaxis()->SetTitle("hits");
-    profileTimeCh2[i] = new TH1F(Form("profileTimeFilter_ch%d",i), Form("profileTimeFilter_ch%d",i), numBins, minTime, maxTime);
-    profileTimeCh2[i]->GetXaxis()->SetTitle("time");
-    profileTimeCh2[i]->GetYaxis()->SetTitle("hits");
-  }
-  
-  
-  int numEntries = getEntries(inputFileNames_[0]);
-  if(!numEntries)
-    return -1;
-
-  for(int i = 0; i < numEntries; i++) {
-    RAWData read = getEvent(i, inputFileNames_[0]);
-    if(!read.check)
-      return -100;
-     RAWData data = getData(&read);
-    if(!data.check)
-      return -101;
-
-    for(int j = 0; j < data.TDCNHits; j++) {
-    
-      profileStrip->Fill(data.TDCCh->at(j));
-      profileTime->Fill(data.TDCTS->at(j));
-      for(int jj = 0; jj < numChMap_; jj++) {
-        if(data.TDCCh->at(j) == map_[jj].real)
-          profileTimeCh[jj]->Fill(data.TDCTS->at(j));
-      }
-
-      double time = data.TDCTS->at(j);
-      int ch = data.TDCCh->at(j);
-      int count = 0;
-      int count2 = 0;
-      ch = data.TDCCh->at(j);
-      count = 0;
-      time = data.TDCTS->at(j);
-      for(int jj = 0; jj < data.TDCNHits; jj++) {
-          if(((ch == data.TDCCh->at(jj) +1)) 
-             && (time > data.TDCTS->at(jj))) {
-           count +=1;
-           ch = data.TDCCh->at(jj);
-           time = data.TDCTS->at(jj);
-          }
-      }
-      count2 = 0;
-      time = data.TDCTS->at(j);
-      ch = data.TDCCh->at(j);
-      for(int jj = 0; jj < data.TDCNHits; jj++) {
-          if((ch == data.TDCCh->at(jj) -1) 
-             && (time > data.TDCTS->at(jj))) {
-           count2 -= 1;
-           ch = data.TDCCh->at(jj);
-           time = data.TDCTS->at(jj);
-          }
-      }
-      int mult = 0;
-      for(int jj = 0; jj < data.TDCNHits; jj++) {
-        if(data.TDCCh->at(j) != data.TDCCh->at(jj)
-           && (data.TDCTS->at(j) + 6 > data.TDCTS->at(jj)) && (data.TDCTS->at(j) - 6 < data.TDCTS->at(jj)))
-          mult+=1;
-      }
-      profileClaster->Fill(mult);
-      if(mult <= 2) {
-        profileStripFilter->Fill(data.TDCCh->at(j));
-        profileTimeFilter->Fill(data.TDCTS->at(j));
-      }
-      if(count == 0 && count2 == 0) {
-        profileStripFilter2->Fill(data.TDCCh->at(j));
-        profileTimeFilter2->Fill(data.TDCTS->at(j));
-        double multTime[mult];
-        double multCh[mult];
-        mult = 0;
-        for(int jj = 0; jj < data.TDCNHits; jj++) {
-          if(data.TDCCh->at(j) != data.TDCCh->at(jj)
-            && (data.TDCTS->at(j) + 6 > data.TDCTS->at(jj)) && (data.TDCTS->at(j) - 6 < data.TDCTS->at(jj))) {
-            multTime[mult] = data.TDCTS->at(jj);
-            multCh[mult] = data.TDCCh->at(jj);
-            mult+=1;
-          }
-        }
-         profileClasterFilter->Fill(mult);
-        if(mult <= 2) {
-         profileStripFilter3->Fill(data.TDCCh->at(j));
-         profileTimeFilter3->Fill(data.TDCTS->at(j));
-          for(int jj = 0; jj < numChMap_; jj++) {
-            if(data.TDCCh->at(j) == map_[jj].real)
-              profileTimeCh2[jj]->Fill(data.TDCTS->at(j));
-          }
-        }
-//        profileClasterFilter->Fill(mult);
-//        int indexMin = indexMinMax(mult, multTime, -1);
-//        profileStripFilter3->Fill(multCh[indexMin]);
-//        profileTimeFilter3->Fill(multTime[indexMin]);
-//        for(int jj = 0; jj < numChMap_; jj++) {
-//          if(data.TDCCh->at(j) == map_[jj].real)
-//            profileTimeCh2[jj]->Fill(multTime[indexMin]);
-//        }
-      }
-    }
-  }
-
-  TString dir(dirName_);
-  dir+="_"; dir+="param_";
-  const char* dirc=dir.Data();
-
-  writeObject(dirc, profileClaster);
-  writeObject(dirc, profileClasterFilter);
-  writeObject(dirc, profileStrip);
-  writeObject(dirc, profileStripFilter);
-  writeObject(dirc, profileStripFilter2);
-  writeObject(dirc, profileStripFilter3);
-  writeObject(dirc, profileTime);
-  writeObject(dirc, profileTimeFilter);
-  writeObject(dirc, profileTimeFilter2);
-  writeObject(dirc, profileTimeFilter3);
-  TString dirCh("time");
-  const char* cDirCh=dirCh.Data();
-  for(int jj = 0; jj < numChMap_; jj++)
-    writeObject(cDirCh, profileTimeCh[jj]);
-  TString dirCh2("timeFilter");
-  const char* cDirCh2=dirCh2.Data();
-  for(int jj = 0; jj < numChMap_; jj++)
-    writeObject(cDirCh2, profileTimeCh2[jj]);
-
-  return 1;
-}
-
-int Analysis::currentSourceProfile() 
-{
-
-  double current[numInFiles_];
-  double eCurrent[numInFiles_];
-  double source[numInFiles_];
-  double eSource[numInFiles_];
-  for(int i = 0; i < numInFiles_; i++) {
-    source[i] = 1/thr_[i];
-    eSource[i] = 0;
-    current[i] = getCurrent(i);
-    eCurrent[i] = 0.2;
-    cout << thr_[i] << " " << source[i] << " " << current[i] << endl;
-  }
-   TGraphErrors *profile = new TGraphErrors(numInFiles_, source, current, eSource, eCurrent); 
-   profile->GetXaxis()->SetTitle("attenuator, U");
-   profile->GetYaxis()->SetTitle("current, mA");
-
-  profile->SetName(Form("%s, HV%2.f", plotName_, volt_[0]));
-  profile->SetTitle(Form("%s, HV%2.f", plotName_, volt_[0]));
-  TString dir(dirName_);
-  dir+="_"; dir+="param_";
-  const char* dirc=dir.Data();
-
-  writeObject(dirc, profile);
-
-  return 1;
-}
-
-int Analysis::effProfile() 
-{
-  double eff[numInFiles_];
-  double eEff[numInFiles_];
-  double HV[numInFiles_];
-  double eHV[numInFiles_];
-  for(int e = 0; e < numInFiles_; e++) {
-    
-//    int numEntries = getEntries(inputFileNames_[e]);
-    int numEntries = 4000;
+    int numEntries = getEntries();
     if(!numEntries)
       return -1;
-    double numGoodEvents = 0;
-    for(int i = 0; i < numEntries; i++) {
-      RAWData read = getEvent(i, inputFileNames_[e]);
-      if(!read.check)
-        return -100;
-       RAWData data = getData(&read);
-      if(!data.check)
-        return -101;
+    
+    for(int e = 0; e < numEntries; e++) {
+      bool isGetEvent = getEvent(e, &data.TDCNHits, data.TDCCh, data.TDCTS);
+      if(!isGetEvent)
+        return 0;
 
-      for(int j = 0; j < data.TDCNHits; j++) {
-        if(data.TDCTS->at(j) > param_[0] && data.TDCTS->at(j) < param_[1]) {
-          numGoodEvents += 1;
-          break;
-        }
+      for(int h = 0; h < data.TDCNHits; h++) {
+
       }
     }
-    eff[e] = numGoodEvents/numEntries;
-    eEff[e] = sqrt((numGoodEvents*(numEntries-numGoodEvents))/numEntries)/numGoodEvents;
-    HV[e] = volt_[e];
-    eHV[e] = 0;
   }
-
-  TGraphErrors *gEff = new TGraphErrors(numInFiles_, HV, eff, eHV, eEff);
-  gEff->SetName(Form("%s Efficiency, threshold = %.2fmV", plotName_, param_[2]));
-  gEff->SetTitle(Form("%s Efficiency, threshold = %.2fmV", plotName_, param_[2]));
-  gEff->GetXaxis()->SetTitle("Threshold, mV");
-  gEff->GetYaxis()->SetTitle("Efficiency");
-  gEff->SetMarkerStyle(8);
-  gEff->SetLineStyle(9);
-  gEff->SetFillColor(0);
-  gEff->SetLineWidth(1);
-   TString dir(dirName_);
-   dir+="_"; dir+="param_";
-   dir+="lowTSThr-"; dir+=param_[0]; dir+="_"; 
-   dir+="highTSThr-";dir+=param_[1];  dir+="_"; 
-   dir+="Thr-";dir+=param_[2];  dir+="_"; 
-   const char* dirc=dir.Data();
-   writeObject(dirc, gEff);
-   gEff->Delete();
-
   return 1;
 }
 
-//-------------------------------------------------------
-int Analysis::loop(char* nameType)
+int Analysis::general() 
 {
+  int numCh = getNumCh();
+  double minCh = getMinCh();
+  double maxCh = getMaxCh();
 
- if(strncmp(nameType, "hitsProfile", 11) == 0) {
-   int isHitsProfile = hitsProfile();
-  }
- if(strncmp(nameType, "timeProfile", 11) == 0) {
-   int isTimeProfile = timeProfile();
-  }
- if(strncmp(nameType, "meanMoreTimeProfile", 19) == 0) {
-   int isMeanMoreTimeProfile = meanMoreTimeProfile();
-  }
- if(strncmp(nameType, "currentSourceProfile", 20) == 0) {
-   int isCurrentSourceProfile = currentSourceProfile();
-  }
- if(strncmp(nameType, "eff", 3) == 0) {
-   int isEff = effProfile();
-  }
+  TH2D *correlation;
+  TH1D *profileNHits;
+  TH2D *profileTimeStrip;
+  TH1D *profileStrip;
+  TH1D *profileTime;
+
+  TH1D *profileTimes[numCh];
+  TF1 *fitTimes[numCh];
+
+  TH2D *profileTimeStripCorrectTime;
+  
+  TH1D *profileNHitsCluster;
+  TH1D *profileStripCluster;
+  TH1D *profileTimeCluster;
+  TH2D *clusteringStrip;
+  
+  AData data; 
+  data.TDCCh = new vector<int>; //List of hits and their channels
+  data.TDCTS = new vector<double>; //List of the corresponding time stamps
+  data.TDCCh->clear();
+  data.TDCTS->clear();
+
+  int numFiles = getNumFiles();
+  for(int i = 0; i < numFiles; i++) {
+
+    int isRunFile = setRunFile(i);
+    if(!isRunFile)
+      return -1;
+//------------------------------------------------------------------------------
+    string nameFile = getDaqName(i);
+    double voltage = getVoltage();
+
+    correlation = new TH2D(Form("Correlation-%s-HV%2.fV", plotName_, voltage), 
+                            Form("%s-HV%2.fV", plotName_, voltage), 
+                            numCh, minCh, maxCh, numCh, minCh, maxCh);
+    correlation->GetXaxis()->SetTitle("strip");
+    correlation->GetYaxis()->SetTitle("strip");
+    correlation->GetZaxis()->SetTitle("correlation");
+    profileNHits = new TH1D(Form("NHits-%s-HV%2.fV", plotName_, voltage), 
+                            Form("%s-HV%2.fV", plotName_, voltage), 
+                            numCh, 0, numCh);
+    profileNHits->GetXaxis()->SetTitle("number of hits");
+    profileNHits->GetYaxis()->SetTitle("number of events");
+    profileTimeStrip = new TH2D(Form("timeAndStrip-%s-HV%2.fV", plotName_, voltage), 
+                            Form("%s-HV%2.fV", plotName_, voltage), 
+                            200, 200, 400, numCh, minCh, maxCh);
+    profileTimeStrip->GetXaxis()->SetTitle("time, ns (bin size 2ns)");
+    profileTimeStrip->GetYaxis()->SetTitle("strip");
+    profileTimeStrip->GetZaxis()->SetTitle("number of hits");
+    profileStrip = new TH1D(Form("strip-%s-HV%2.fV", plotName_, voltage), 
+                            Form("%s-HV%2.fV", plotName_, voltage), 
+                            numCh, minCh, maxCh);
+
+    profileTime = new TH1D(Form("time-%s-HV%2.fV", plotName_, voltage), 
+                            Form("%s-HV%2.fV", plotName_, voltage), 
+                            200, 200, 400);
+    profileTime->GetXaxis()->SetTitle("time, ns (bin size 2ns)");
+    profileTime->GetYaxis()->SetTitle("number of hits");
+
+    for(int ch = 0; ch < numCh; ch++) {
+      profileTimes[ch] = new TH1D(Form("ch%1.f-time-%s-HV%2.fV", ch+minCh, plotName_, voltage), 
+                             Form("ch%1.f-%s-HV%2.fV", ch+minCh, plotName_, voltage), 
+                             200, 200, 400);
+      profileTimes[ch]->GetXaxis()->SetTitle("time, ns (bin size 2ns)");
+      profileTimes[ch]->GetYaxis()->SetTitle("number of hits");
+    }
+
+    /* time correct */
+    profileTimeStripCorrectTime = new TH2D(Form("timeAndStripCorrectTime-%s-HV%2.fV", plotName_, voltage), 
+                            Form("%s-HV%2.fV", plotName_, voltage), 
+                            200, 200, 400, numCh, minCh, maxCh);
+    profileTimeStripCorrectTime->GetXaxis()->SetTitle("time, ns (bin size 2ns)");
+    profileTimeStripCorrectTime->GetYaxis()->SetTitle("strip");
+    profileTimeStripCorrectTime->GetZaxis()->SetTitle("number of hits");
     
-}
+    /* clustering */
+    profileNHitsCluster = new TH1D(Form("cluster-NHits-%s-HV%2.fV", plotName_, voltage), 
+                            Form("%s-HV%2.fV", plotName_, voltage), 
+                            numCh, 0, numCh);
+    profileNHitsCluster->GetXaxis()->SetTitle("number of clusters");
+    profileNHitsCluster->GetYaxis()->SetTitle("number of events");
+    profileStripCluster = new TH1D(Form("cluster-strip-%s-HV%2.fV", plotName_, voltage), 
+                            Form("%s-HV%2.fV", plotName_, voltage), 
+                            numCh, minCh, maxCh);
+    profileStripCluster->GetXaxis()->SetTitle("cluster");
+    profileStripCluster->GetYaxis()->SetTitle("number of clusters");
+    profileTimeCluster = new TH1D(Form("cluster-time-%s-HV%2.fV", plotName_, voltage), 
+                            Form("%s-HV%2.fV", plotName_, voltage), 
+                            200, 200, 400);
+    profileTimeCluster->GetXaxis()->SetTitle("time, ns (bin size 2ns)");
+    profileTimeCluster->GetYaxis()->SetTitle("number of clusters");
+    clusteringStrip = new TH2D(Form("cluster-%s-HV%2.fV", plotName_, voltage), 
+                            Form("%s-HV%2.fV", plotName_, voltage), 
+                            200, 200, 400, numCh, minCh, maxCh);
+    clusteringStrip->GetXaxis()->SetTitle("time, ns (bin size 2ns)");
+    clusteringStrip->GetYaxis()->SetTitle("cluster");
+    clusteringStrip->GetZaxis()->SetTitle("number of clusters");
 
-string Analysis::getError(int index)
+//------------------------------------------------------------------------------
+    
+    int numEntries = getEntries();
+    if(!numEntries)
+      return -1;
+    
+    // plot profiles and fit data
+    for(int e = 0; e < numEntries; e++) {
+      bool isGetEvent = getEvent(e, &data.TDCNHits, data.TDCCh, data.TDCTS);
+      if(!isGetEvent)
+        return 0;
+
+      profileNHits->Fill(data.TDCNHits); 
+      for(int h = 0; h < data.TDCNHits; h++) {
+
+        for(int hh = 0; hh < data.TDCNHits; hh++) {
+          if(data.TDCTS->at(h) - param_[0] < data.TDCTS->at(hh) &&
+             data.TDCTS->at(h) + param_[1] > data.TDCTS->at(hh))
+            correlation->Fill(data.TDCCh->at(h), data.TDCCh->at(hh));
+        }
+        profileStrip->Fill(data.TDCCh->at(h));
+
+        if(data.TDCTS->at(h) <= 400 && data.TDCTS->at(h) >= 200) {
+          profileTime->Fill(data.TDCTS->at(h));
+          profileTimeStrip->Fill(data.TDCTS->at(h),data.TDCCh->at(h));
+        }
+      
+
+        for(int ch = 0; ch < numCh; ch++) {
+          if(data.TDCTS->at(h) <= 400 && data.TDCTS->at(h) >= 200 && 
+             data.TDCCh->at(h) == ch+minCh)
+            profileTimes[ch]->Fill(data.TDCTS->at(h));
+        }
+      }
+    }
+
+    // time correct
+    double timeCorrect[numCh];
+    double meanTimeCorrect = 0;
+      for(int ch = 0; ch < numCh; ch++)
+       meanTimeCorrect += profileTimes[ch]->GetMean();
+      meanTimeCorrect = meanTimeCorrect/numCh;
+      for(int ch = 0; ch < numCh; ch++)
+       timeCorrect[ch] = meanTimeCorrect - profileTimes[ch]->GetMean();
+
+    // clustering
+    AData out; 
+    out.TDCCh = new vector<int>; // List of hits and their channels
+    out.TDCTS = new vector<double>; // List of the corresponding time stamps
+    out.TDCCh->clear();
+    out.TDCTS->clear();
+    for(int e = 0; e < numEntries; e++) {
+      bool isGetEvent = getEvent(e, &data.TDCNHits, data.TDCCh, data.TDCTS);
+      if(!isGetEvent)
+        return 0;
+     
+      // time correct переделай все в функцию
+      for(int h = 0; h < data.TDCNHits; h++) {
+        for(int ch = 0; ch < numCh; ch++) {
+          if(data.TDCCh->at(h) == ch+minCh)
+            data.TDCTS->at(h) = data.TDCTS->at(h)+timeCorrect[ch];
+        }
+      }
+      for(int h = 0; h < data.TDCNHits; h++) {
+        if(data.TDCTS->at(h) <= 400 && data.TDCTS->at(h) >= 200) {
+          profileTimeStripCorrectTime->Fill(data.TDCTS->at(h), data.TDCCh->at(h));
+        }
+      }
+      
+      clustering(param_[2], param_[3], data, &out.TDCNHits, out.TDCCh, out.TDCTS);
+      profileNHitsCluster->Fill(out.TDCNHits); 
+      for(int h = 0; h < out.TDCNHits; h++) {
+        profileStripCluster->Fill(out.TDCCh->at(h));
+        if(out.TDCTS->at(h) <= 400 && out.TDCTS->at(h) >= 200) {
+          clusteringStrip->Fill(out.TDCTS->at(h), out.TDCCh->at(h));
+          profileTimeCluster->Fill(out.TDCTS->at(h));
+        }
+      }
+
+    }
+    TString profileDir(nameFile.c_str());
+    profileDir+="/profiles";
+    const char* profileDirc=profileDir.Data();
+    writeObject(profileDirc, correlation);
+    correlation->Delete();
+    writeObject(profileDirc, profileNHits);
+    profileNHits->Delete();
+    writeObject(profileDirc, profileStrip);
+    profileStrip->Delete();
+    writeObject(profileDirc, profileTime);
+    profileTime->Delete();
+    writeObject(profileDirc, profileTimeStrip);
+    profileTimeStrip->Delete();
+    
+    TString profileCorrectTimeDir(nameFile.c_str());
+    profileCorrectTimeDir+="/profiles/timeCorrect";
+    const char* profileCorrectTimeDirc=profileCorrectTimeDir.Data();
+    writeObject(profileCorrectTimeDirc, profileTimeStripCorrectTime);
+    profileTimeStripCorrectTime->Delete();
+
+    TString profileClusterDir(nameFile.c_str());
+    profileClusterDir+="/profiles/cluster";
+    const char* profileClusterDirc=profileClusterDir.Data();
+    writeObject(profileClusterDirc, profileNHitsCluster);
+    profileNHitsCluster->Delete();
+    writeObject(profileClusterDirc, profileStripCluster);
+    profileStripCluster->Delete();
+    writeObject(profileClusterDirc, profileTimeCluster);
+    profileTimeCluster->Delete();
+    writeObject(profileClusterDirc, clusteringStrip);
+    clusteringStrip->Delete();
+
+    TString chTimeDir(nameFile.c_str());
+    chTimeDir+="/profiles/chTimeProfiles";
+    const char* chTimeDirc=chTimeDir.Data();
+    for(int ch = 0; ch < numCh; ch++) {
+      writeObject(chTimeDirc, profileTimes[ch]);
+    }
+    TString chFitTimeDir(nameFile.c_str());
+    chFitTimeDir+="/profiles/chFitTimeProfiles";
+    const char* chFitTimeDirc=chFitTimeDir.Data();
+    for(int ch = 0; ch < numCh; ch++) {
+      double lowFitTime = profileTimes[ch]->GetMean()-profileTimes[ch]->GetRMS();
+      double highFitTime = profileTimes[ch]->GetMean()+profileTimes[ch]->GetRMS();
+      fitTimes[ch] = new TF1(Form("fit-ch%1.f-time-%s-HV%2.fV", 
+                                ch+minCh, plotName_, voltage),
+                             "gaus", lowFitTime, highFitTime);
+      profileTimes[ch]->Fit(fitTimes[ch]);
+      writeObject(chFitTimeDirc, profileTimes[ch]);
+      fitTimes[ch]->Delete();
+      profileTimes[ch]->Delete();
+    }
+  }
+  return 1;
+}
+//------------------------------------------------------------------------------
+
+/* Loop function. */ 
+//------------------------------------------------------------------------------
+/*! \fn loop
+* \brief Loop function for choose the type of analysis and run it.
+*
+* \inputs: char* nameType
+* Types:
+* 1. General analysis: general
+* 2. Plot hits profile: hPro
+* 3. Plot time profile: tPro 
+* 4. Plot efficincy: eff
+* \return: bool: true - good run; false - run with errors.   
+*/
+bool Analysis::loop(char* nameType)
 {
-  if(index == -10) // set names of files
-    
-    return "Number of input files should be more 0.";
-  
-  if(index == -20) // set param
-    return "Number of parametors should be more or equally 0.";
-  
-  if(index == -30) // set param
-    return "Range for strips isn't correct.";
-  if(index == -31) // set param
-    return "Mask for strips isn't correct. ";
-  
-  if(index == -40) // set param
-    return "If You want put map for strips. You should set the range for strips.";
-  if(index == -41) // set param
-    return "Map isn't corret. Should be with same range (numStrips - numChMask)";
-  
-  if(index == 1)
-    return "No errors";
-  
-  return "Not correct index for error.";
+ if(strncmp(nameType, "general", 7) == 0) {
+   int isGeneral = general();
+ if(strncmp(nameType, "francois", 8) == 0) {
+   int isGeneral = general();
+  }
+  return true;
 }
-//-------------------------------------------------------
+//------------------------------------------------------------------------------
