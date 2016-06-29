@@ -84,8 +84,8 @@ int main(int argc, char* argv[])
     caenInputFileNames[i] = new char[256];
   configure.getCaenNamesFiles(inputTextFile, caenInputFileNames, caenNumInFiles);
   /* END. */  
- 
-  if(daqNumInFiles != caenNumInFiles) {
+
+  if(daqNumInFiles != caenNumInFiles && daqNumInFiles != 0) {
     cout << "ERROR: Check files." << endl;
     return 1; 
   }
@@ -132,9 +132,10 @@ int numChMask = configure.getMaskNumParam(inputTextFile);
 
     analysis.setDaqInputFileNames(daqInputFileNames, daqNumInFiles);
     analysis.setCaenInputFileNames(caenInputFileNames, caenNumInFiles);
-    analysis.setPlotName(plotName);
     analysis.setMask(firstCh, lastCh, mask, numChMask);
     analysis.setMap(map, numChMap);
+
+    analysis.setPlotName(plotName);
     analysis.setParam(param, numParam);
     
     analysis.setOutputFile(outputFileName, outputTreeName);
@@ -142,11 +143,8 @@ int numChMask = configure.getMaskNumParam(inputTextFile);
     int isLoop = analysis.loop(nameType);
     if(isLoop == 1)
       cout << "The End." << endl;
-    if(isLoop == -1) { 
-      cout << "ERROR: Can't read file." << endl;
-      cout << endl;
-      cout << "The End." << endl;
-    }
+    else
+      cout << "ERRORS. The End." << endl;
 
   return 1;
 }

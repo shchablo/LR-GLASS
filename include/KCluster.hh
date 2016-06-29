@@ -28,7 +28,8 @@ public:
   //----------------------------------------------------------------------------
   void clustering(int spaceRange, double timeRange, 
               int inTDCNHits, vector<int> inTDCCh, vector<double> inTDCTS,
-              int *outTDCNHits, vector<int> *outTDCCh, vector<double> *outTDCTS);
+              int *outTDCNHits, vector<int> *outTDCCh, vector<double> *outTDCTS,
+              vector<int> *outCluster);
   //----------------------------------------------------------------------------
 
 };

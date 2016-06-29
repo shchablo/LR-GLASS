@@ -15,6 +15,7 @@
 #include <TH2D.h>
 #include <TF1.h>
 #include <TString.h>
+#include <TGraphErrors.h>
 //------------------------------------------------------------------------------
 
 /* C++ includes */

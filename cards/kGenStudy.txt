@@ -1,7 +1,7 @@
 #INFORMATION:
-
-version: 16.06.2016
 You can find code: https://github.com/shchablo/LR-GLASS
+
+version: 29.06.2016
 
 -firstCh=1000 - first channel for read
 -lastCh=1127 -  last channel for read

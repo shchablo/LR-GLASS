@@ -20,8 +20,10 @@ KCluster::~KCluster()
 //------------------------------------------------------------------------------
 void KCluster::clustering(int spaceRange, double timeRange, 
             int inTDCNHits, vector<int> inTDCCh, vector<double> inTDCTS,
-            int *outTDCNHits, vector<int> *outTDCCh, vector<double> *outTDCTS) 
+            int *outTDCNHits, vector<int> *outTDCCh, vector<double> *outTDCTS,
+            vector<int> *outCluster)
 {
+  outCluster->clear();
   *outTDCNHits = 0;
   outTDCCh->clear();
   outTDCTS->clear();
@@ -88,10 +90,11 @@ void KCluster::clustering(int spaceRange, double timeRange,
               }
               meanTDCTS = meanTDCTS/TDCNHits;
               meanTDCCh = meanTDCCh/TDCNHits;
-              if(timeRange > (maxTDCTS - minTDCTS) || true) {
+              if(timeRange > abs(maxTDCTS - minTDCTS)) {
                 outTDCCh->push_back(meanTDCCh);
-                outTDCTS->push_back(meanTDCTS);
+                outTDCTS->push_back(minTDCTS);
                 *outTDCNHits += 1;
+                outCluster->push_back(TDCNHits);
                 exit = true;
               }
               else {
@@ -122,6 +125,7 @@ void KCluster::clustering(int spaceRange, double timeRange,
               outTDCCh->push_back(inTDCCh.at(index[0]));
               outTDCTS->push_back(inTDCTS.at(index[0]));
               *outTDCNHits += 1;
+              outCluster->push_back(1);
               exit = true;
             }
           }
@@ -131,10 +135,10 @@ void KCluster::clustering(int spaceRange, double timeRange,
           outTDCCh->push_back(inTDCCh.at(h));
           outTDCTS->push_back(inTDCTS.at(h));
           *outTDCNHits += 1;
+          outCluster->push_back(1);
         }
       }
       else {
-//        cout << inData.TDCCh->at(h) << "  " << inData.TDCCh->at(h+1) << endl;
         cluster[h] = false;
         TDCNHits += 1;
         TDCCh.push_back(inTDCCh.at(h));
