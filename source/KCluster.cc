@@ -33,13 +33,13 @@ void KCluster::clustering(int spaceRange, double timeRange,
   while(!exit) {
    exit = true;
    for(int i = 0; i < inTDCNHits - 1; i++)
-     if(inTDCCh.at(i) > inTDCCh.at(i+1)) {
-      tempCh = inTDCCh.at(i);
-      inTDCCh.at(i) = inTDCCh.at(i+1);
-      inTDCCh.at(i+1) = tempCh;
-      tempTime = inTDCTS.at(i);
-      inTDCTS.at(i) = inTDCTS.at(i+1);
-      inTDCTS.at(i+1) = tempCh;
+     if(inTDCCh[i] > inTDCCh[i+1]) {
+      tempCh = inTDCCh[i];
+      inTDCCh[i] = inTDCCh[i+1];
+      inTDCCh[i+1] = tempCh;
+      tempTime = inTDCTS[i];
+      inTDCTS[i] = inTDCTS[i+1];
+      inTDCTS[i+1] = tempTime;
       exit = false;
      }
   }
@@ -57,20 +57,25 @@ void KCluster::clustering(int spaceRange, double timeRange,
   exit = false;
   while(!exit) {
     exit = true;
-    for(int h = hBegin; (h < inTDCNHits) && cluster[h]; h++) {
-      int hIndex = h+1;
-      for(int hh = hIndex; hh < inTDCNHits; hh++) {
+    for(int h = 0; (h < inTDCNHits); h++) {
+      int hIndex = h;
+      for(int hh = h; hh < inTDCNHits; hh++) {
         if(cluster[hh] == true) {
           hIndex = hh;
           break;
         }
       }
-      if(inTDCCh.at(h) + spaceRange < inTDCCh.at(hIndex)) {
+      if(inTDCCh.at(hIndex) + spaceRange < inTDCCh.at(hIndex+1)) {
+        cluster[hIndex] = false;
+        TDCNHits += 1;
+        TDCCh.push_back(inTDCCh.at(hIndex));
+        TDCTS.push_back(inTDCTS.at(hIndex));
+        index.push_back(hIndex);
         if(TDCNHits != 0) {
-          exit = false;
-          while(!exit) {
-            double minTDCTS = std::numeric_limits<double>::max();
-            double maxTDCTS = std::numeric_limits<double>::min();
+          bool exit2 = false;
+          while(!exit2) {
+            double minTDCTS = 10000;
+            double maxTDCTS = -10000;
             int indexMinTDCTS = 0;
             int indexMaxTDCTS = 0;
             double meanTDCTS = 0;
@@ -90,12 +95,12 @@ void KCluster::clustering(int spaceRange, double timeRange,
               }
               meanTDCTS = meanTDCTS/TDCNHits;
               meanTDCCh = meanTDCCh/TDCNHits;
-              if(timeRange > abs(maxTDCTS - minTDCTS)) {
+              if(timeRange >= abs(maxTDCTS - minTDCTS)) {
                 outTDCCh->push_back(meanTDCCh);
-                outTDCTS->push_back(minTDCTS);
+                outTDCTS->push_back(meanTDCTS);
                 *outTDCNHits += 1;
                 outCluster->push_back(TDCNHits);
-                exit = true;
+                exit2 = true;
               }
               else {
                 if(abs(maxTDCTS - meanTDCCh) > abs(meanTDCCh - minTDCTS)) {
@@ -122,28 +127,28 @@ void KCluster::clustering(int spaceRange, double timeRange,
             }
             else {
               cluster[index[0]] = false;
-              outTDCCh->push_back(inTDCCh.at(index[0]));
-              outTDCTS->push_back(inTDCTS.at(index[0]));
+              outTDCCh->push_back(inTDCCh.at(0));
+              outTDCTS->push_back(inTDCTS.at(0));
               *outTDCNHits += 1;
               outCluster->push_back(1);
-              exit = true;
+              exit2 = true;
             }
           }
         }
         else {
-          cluster[h] = false;
-          outTDCCh->push_back(inTDCCh.at(h));
-          outTDCTS->push_back(inTDCTS.at(h));
+          cluster[hIndex] = false;
+          outTDCCh->push_back(inTDCCh.at(hIndex));
+          outTDCTS->push_back(inTDCTS.at(hIndex));
           *outTDCNHits += 1;
           outCluster->push_back(1);
         }
       }
       else {
-        cluster[h] = false;
+        cluster[hIndex] = false;
         TDCNHits += 1;
-        TDCCh.push_back(inTDCCh.at(h));
-        TDCTS.push_back(inTDCTS.at(h));
-        index.push_back(h);
+        TDCCh.push_back(inTDCCh.at(hIndex));
+        TDCTS.push_back(inTDCTS.at(hIndex));
+        index.push_back(hIndex);
       }
     }
     for(int h = 0; h < inTDCNHits; h++) {

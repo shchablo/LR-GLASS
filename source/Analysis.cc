@@ -172,7 +172,7 @@ int Analysis::kGenStudy()
     correlation->GetZaxis()->SetTitle("correlation");
     profileNHits = new TH1D(Form("NHits-%s-HV%2.fV", plotName_, voltage), 
                             Form("%s-HV%2.fV", plotName_, voltage), 
-                            numCh, 0, numCh);
+                            3*numCh, 0, 3*numCh);
     profileNHits->GetXaxis()->SetTitle("number of hits");
     profileNHits->GetYaxis()->SetTitle("number of events");
     profileTimeStrip = new TH2D(Form("timeAndStrip-%s-HV%2.fV", plotName_, voltage), 
@@ -215,7 +215,7 @@ int Analysis::kGenStudy()
     /* clustering */
     profileNHitsCluster = new TH1D(Form("cluster-NHits-%s-HV%2.fV", plotName_, voltage), 
                             Form("%s-HV%2.fV", plotName_, voltage), 
-                            numCh, 0, numCh);
+                            3*numCh, 0, 3*numCh);
     profileNHitsCluster->GetXaxis()->SetTitle("number of clusters");
     profileNHitsCluster->GetYaxis()->SetTitle("number of events");
     profileStripCluster = new TH1D(Form("cluster-strip-%s-HV%2.fV", plotName_, voltage), 
@@ -238,13 +238,13 @@ int Analysis::kGenStudy()
     /* clustering */
     multiplicity = new TH1D(Form("multiplicity-%s-HV%2.fV", plotName_, voltage), 
                             Form("%s-HV%2.fV", plotName_, voltage), 
-                            numCh, 0, numCh);
+                            3*numCh, 0, 3*numCh);
     multiplicity->GetXaxis()->SetTitle("number of hits");
     multiplicity->GetYaxis()->SetTitle("number of events");
     
     multiplicityCluster = new TH1D(Form("multiplicityCluster-%s-HV%2.fV", plotName_, voltage), 
                             Form("%s-HV%2.fV", plotName_, voltage), 
-                            numCh, 0, numCh);
+                            3*numCh, 0, 3*numCh);
     multiplicityCluster->GetXaxis()->SetTitle("number of hits");
     multiplicityCluster->GetYaxis()->SetTitle("number of events");
 
