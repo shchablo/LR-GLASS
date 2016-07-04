@@ -1,4 +1,6 @@
 #include "KCluster.hh"
+
+#include <limits>
 /* Constructor, destructor. */ 
 //------------------------------------------------------------------------------
 /*! \fn KCluster
@@ -95,7 +97,7 @@ void KCluster::clustering(int spaceRange, double timeRange,
               }
               meanTDCTS = meanTDCTS/TDCNHits;
               meanTDCCh = meanTDCCh/TDCNHits;
-              if(timeRange >= abs(maxTDCTS - minTDCTS)) {
+              if(timeRange >= fabs(maxTDCTS - minTDCTS)) {
                 outTDCCh->push_back(meanTDCCh);
                 outTDCTS->push_back(meanTDCTS);
                 *outTDCNHits += 1;
@@ -103,7 +105,7 @@ void KCluster::clustering(int spaceRange, double timeRange,
                 exit2 = true;
               }
               else {
-                if(abs(maxTDCTS - meanTDCCh) > abs(meanTDCCh - minTDCTS)) {
+                if(fabs(maxTDCTS - meanTDCCh) > fabs(meanTDCCh - minTDCTS)) {
                   TDCNHits -= 1;
                   cluster[index[indexMaxTDCTS]] = false;
                   TDCCh.erase(TDCCh.begin() + indexMaxTDCTS);
