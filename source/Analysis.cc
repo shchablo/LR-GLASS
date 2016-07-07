@@ -141,6 +141,8 @@ int Analysis::kGenStudy()
   
   TH1D *multiplicity;
   TH1D *multiplicityCluster;
+  TH1D *multiplicityShift;
+  TH1D *multiplicityClusterShift;
   
   AData data; 
   data.TDCCh = new vector<int>;
@@ -148,13 +150,39 @@ int Analysis::kGenStudy()
   data.TDCCh->clear();
   data.TDCTS->clear();
 
+
   int numFiles = getNumFiles();
+  double mean[numFiles];
+  double eMean[numFiles];
+  double sigma[numFiles];
+  double eSigma[numFiles];
+
+  double meanCluster[numFiles];
+  double eMeanCluster[numFiles];
+  double sigmaCluster[numFiles];
+  double eSigmaCluster[numFiles];
+
   double effCluster[numFiles];
-  double eff[numFiles];
-  double effVoltage[numFiles];
-  double eEff[numFiles];
   double eEffCluster[numFiles];
+  double eff[numFiles];
+  double eEff[numFiles];
+
+  double effClusterShift[numFiles];
+  double eEffClusterShift[numFiles];
+  double effShift[numFiles];
+  double eEffShift[numFiles];
+
+  double effVoltage[numFiles];
   double eEffVoltage[numFiles];
+
+  double lowTime = 0;
+  double highTime = 0;
+  double clusterLowTime = 0;
+  double clusterHighTime = 0;
+  double shiftLowTime = 0;
+  double shiftHighTime = 0;
+  double shiftClusterLowTime = 0;
+  double shiftClusterHighTime = 0;
   for(int i = 0; i < numFiles; i++) {
 
     int isRunFile = setRunFile(i);
@@ -200,14 +228,14 @@ int Analysis::kGenStudy()
     }
 
     /* time correct */
-    profileTimeCorrect = new TH1D(Form("timeCorrect-%s-HV%2.fV", plotName_, voltage), 
+    profileTimeCorrect = new TH1D(Form("Correct time %s-HV%2.fV", plotName_, voltage), 
                             Form("%s-HV%2.fV", plotName_, voltage), 
-                            200, 200, 400);
+                            200, -200, 200);
     profileTimeCorrect->GetXaxis()->SetTitle("time, ns (bin size 2ns)");
     profileTimeCorrect->GetYaxis()->SetTitle("number of hits");
-    profileTimeStripCorrectTime = new TH2D(Form("timeAndStripCorrectTime-%s-HV%2.fV", plotName_, voltage), 
+    profileTimeStripCorrectTime = new TH2D(Form("Correct Time - %s-HV%2.fV", plotName_, voltage), 
                             Form("%s-HV%2.fV", plotName_, voltage), 
-                            200, 200, 400, numCh, minCh, maxCh);
+                            200, -200, 200, numCh, minCh, maxCh);
     profileTimeStripCorrectTime->GetXaxis()->SetTitle("time, ns (bin size 2ns)");
     profileTimeStripCorrectTime->GetYaxis()->SetTitle("strip");
     profileTimeStripCorrectTime->GetZaxis()->SetTitle("number of hits");
@@ -225,12 +253,12 @@ int Analysis::kGenStudy()
     profileStripCluster->GetYaxis()->SetTitle("number of clusters");
     profileTimeCluster = new TH1D(Form("cluster-time-%s-HV%2.fV", plotName_, voltage), 
                             Form("%s-HV%2.fV", plotName_, voltage), 
-                            200, 200, 400);
+                            200, -200, 200);
     profileTimeCluster->GetXaxis()->SetTitle("time, ns (bin size 2ns)");
     profileTimeCluster->GetYaxis()->SetTitle("number of clusters");
     clusteringStrip = new TH2D(Form("cluster-%s-HV%2.fV", plotName_, voltage), 
                             Form("%s-HV%2.fV", plotName_, voltage), 
-                            200, 200, 400, numCh, minCh, maxCh);
+                            200, -200, 200, numCh, minCh, maxCh);
     clusteringStrip->GetXaxis()->SetTitle("time, ns (bin size 2ns)");
     clusteringStrip->GetYaxis()->SetTitle("cluster");
     clusteringStrip->GetZaxis()->SetTitle("number of clusters");
@@ -242,11 +270,22 @@ int Analysis::kGenStudy()
     multiplicity->GetXaxis()->SetTitle("number of hits");
     multiplicity->GetYaxis()->SetTitle("number of events");
     
+    multiplicityShift = new TH1D(Form("multiplicity-shift-%s-HV%2.fV", plotName_, voltage), 
+                            Form("%s-HV%2.fV", plotName_, voltage), 
+                            3*numCh, 0, 3*numCh);
+    multiplicityShift->GetXaxis()->SetTitle("number of hits");
+    multiplicityShift->GetYaxis()->SetTitle("number of events");
+    
     multiplicityCluster = new TH1D(Form("multiplicityCluster-%s-HV%2.fV", plotName_, voltage), 
                             Form("%s-HV%2.fV", plotName_, voltage), 
                             3*numCh, 0, 3*numCh);
     multiplicityCluster->GetXaxis()->SetTitle("number of hits");
     multiplicityCluster->GetYaxis()->SetTitle("number of events");
+    multiplicityClusterShift = new TH1D(Form("multiplicityCluster-shift-%s-HV%2.fV", plotName_, voltage), 
+                            Form("%s-HV%2.fV", plotName_, voltage), 
+                            3*numCh, 0, 3*numCh);
+    multiplicityClusterShift->GetXaxis()->SetTitle("number of hits");
+    multiplicityClusterShift->GetYaxis()->SetTitle("number of events");
 
 //------------------------------------------------------------------------------
     
@@ -291,7 +330,7 @@ int Analysis::kGenStudy()
        meanTimeCorrect += profileTimes[ch]->GetMean();
       meanTimeCorrect = meanTimeCorrect/numCh;
       for(int ch = 0; ch < numCh; ch++)
-       timeCorrect[ch] = meanTimeCorrect - profileTimes[ch]->GetMean();
+       timeCorrect[ch] =  profileTimes[ch]->GetMean();
     //--------------------------------------------------------------------------
 
     /* clustering study and eff + multiplicity */
@@ -312,11 +351,11 @@ int Analysis::kGenStudy()
       for(int h = 0; h < data.TDCNHits; h++) {
         for(int ch = 0; ch < numCh; ch++) {
           if(data.TDCCh->at(h) == ch+minCh)
-            data.TDCTS->at(h) = data.TDCTS->at(h)+timeCorrect[ch];
+            data.TDCTS->at(h) = data.TDCTS->at(h)-timeCorrect[ch];
         }
       }
       for(int h = 0; h < data.TDCNHits; h++) {
-        if(data.TDCTS->at(h) <= 400 && data.TDCTS->at(h) >= 200) {
+        if(data.TDCTS->at(h) <= 200 && data.TDCTS->at(h) >= -200) {
           profileTimeStripCorrectTime->Fill(data.TDCTS->at(h), data.TDCCh->at(h));
           profileTimeCorrect->Fill(data.TDCTS->at(h));
         }
@@ -330,7 +369,7 @@ int Analysis::kGenStudy()
       profileNHitsCluster->Fill(out.TDCNHits); 
       for(int h = 0; h < out.TDCNHits; h++) {
         profileStripCluster->Fill(out.TDCCh->at(h));
-        if(out.TDCTS->at(h) <= 400 && out.TDCTS->at(h) >= 200) {
+        if(out.TDCTS->at(h) <= 200 && out.TDCTS->at(h) >= -200) {
           clusteringStrip->Fill(out.TDCTS->at(h), out.TDCCh->at(h));
           profileTimeCluster->Fill(out.TDCTS->at(h));
         }
@@ -342,23 +381,42 @@ int Analysis::kGenStudy()
                        profileTimeCorrect->GetMean()-profileTimeCorrect->GetRMS(),
                        profileTimeCorrect->GetMean()+profileTimeCorrect->GetRMS());
     profileTimeCorrect->Fit(fitTimeCorrect);
+    mean[i] = fitTimeCorrect->GetParameter(1);
+    eMean[i] = fitTimeCorrect->GetParError(1);
+    sigma[i] = fitTimeCorrect->GetParameter(2);
+    eSigma[i] = fitTimeCorrect->GetParError(2);
     
     fitTimeCluster = new TF1(Form("fit-timeCluster-%s-HV%2.fV", plotName_, voltage),
                              "gaus", 
                        profileTimeCluster->GetMean()-profileTimeCluster->GetRMS(),
                        profileTimeCluster->GetMean()+profileTimeCluster->GetRMS());
     profileTimeCluster->Fit(fitTimeCluster);
+    meanCluster[i] = fitTimeCluster->GetParameter(1);
+    eMeanCluster[i] = fitTimeCluster->GetParError(1);
+    sigmaCluster[i] = fitTimeCluster->GetParameter(2);
+    eSigmaCluster[i] = fitTimeCluster->GetParError(2);
 
-
+    if(i == 0) {
+      lowTime = fitTimeCorrect->GetParameter(1) - 2*fitTimeCorrect->GetParameter(2);
+      highTime = fitTimeCorrect->GetParameter(1) + 2*fitTimeCorrect->GetParameter(2);
+      clusterLowTime = fitTimeCluster->GetParameter(1) - 2*fitTimeCluster->GetParameter(2);
+      clusterHighTime = fitTimeCluster->GetParameter(1) + 2*fitTimeCluster->GetParameter(2);
+    }
      eff[i] = 0;
      effCluster[i] = 0;
     for(int e = 0; e < numEntries; e++) {
       bool isGetEvent = getEvent(e, &data.TDCNHits, data.TDCCh, data.TDCTS);
       if(!isGetEvent)
         return 0;
+      /* time correct */
+    //--------------------------------------------------------------------------
+      for(int h = 0; h < data.TDCNHits; h++) {
+        for(int ch = 0; ch < numCh; ch++) {
+          if(data.TDCCh->at(h) == ch+minCh)
+            data.TDCTS->at(h) = data.TDCTS->at(h)-timeCorrect[ch];
+        }
+      }
       double countMultiplicity = 0;
-      double lowTime = fitTimeCorrect->GetParameter(1) - 3*fitTimeCorrect->GetParameter(2);
-      double highTime = fitTimeCorrect->GetParameter(1) + 3*fitTimeCorrect->GetParameter(2);
       for(int h = 0; h < data.TDCNHits; h++) {
         if(data.TDCTS->at(h) >= lowTime && data.TDCTS->at(h) <= highTime) {
           eff[i] += 1;
@@ -375,12 +433,37 @@ int Analysis::kGenStudy()
                           data.TDCNHits, *data.TDCCh, *data.TDCTS, 
                           &out.TDCNHits, out.TDCCh, out.TDCTS, &outCluster);
       countMultiplicity = 0;
-      lowTime = fitTimeCluster->GetParameter(1) - 3*fitTimeCluster->GetParameter(2);
-      highTime = fitTimeCluster->GetParameter(1) + 3*fitTimeCluster->GetParameter(2);
       for(int h = 0; h < out.TDCNHits; h++) {
-        if(out.TDCTS->at(h) >= lowTime && out.TDCTS->at(h) <= highTime) {
+        if(out.TDCTS->at(h) >= clusterLowTime && out.TDCTS->at(h) <= clusterHighTime) {
           effCluster[i] += 1;
           multiplicityCluster->Fill(outCluster.at(h));
+          break;
+        }
+      }
+    if(i == 0) {
+      shiftLowTime = fitTimeCorrect->GetParameter(1) - 8*fitTimeCorrect->GetParameter(2);
+      shiftHighTime = fitTimeCorrect->GetParameter(1) - 4*fitTimeCorrect->GetParameter(2);
+      shiftClusterLowTime = fitTimeCluster->GetParameter(1) - 8*fitTimeCluster->GetParameter(2);
+      shiftClusterHighTime = fitTimeCluster->GetParameter(1) - 4*fitTimeCluster->GetParameter(2);
+    }
+      /* shift eff */
+     effShift[i] = 0;
+     effClusterShift[i] = 0;
+      for(int h = 0; h < data.TDCNHits; h++) {
+        if(data.TDCTS->at(h) >= shiftLowTime && data.TDCTS->at(h) <= shiftHighTime) {
+          effShift[i] += 1;
+          for(int hh = 0; hh < data.TDCNHits; hh++) {
+            if(data.TDCTS->at(hh) >= shiftLowTime && data.TDCTS->at(hh) <= shiftHighTime)
+              countMultiplicity += 1;
+          }
+          multiplicityShift->Fill(countMultiplicity);
+          break;
+        }
+      }
+      for(int h = 0; h < out.TDCNHits; h++) {
+        if(out.TDCTS->at(h) >= shiftClusterLowTime && out.TDCTS->at(h) <= shiftClusterHighTime) {
+          effClusterShift[i] += 1;
+          multiplicityClusterShift->Fill(outCluster.at(h));
           break;
         }
       }
@@ -401,6 +484,8 @@ int Analysis::kGenStudy()
     profileTimeStrip->Delete();
     writeObject(profileDirc, multiplicity);
     multiplicity->Delete();
+    writeObject(profileDirc, multiplicityShift);
+    multiplicityShift->Delete();
     
     TString profileCorrectTimeDir(nameFile.c_str());
     profileCorrectTimeDir+="/profiles/timeCorrect";
@@ -425,6 +510,8 @@ int Analysis::kGenStudy()
     clusteringStrip->Delete();
     writeObject(profileClusterDirc, multiplicityCluster);
     multiplicityCluster->Delete();
+    writeObject(profileClusterDirc, multiplicityClusterShift);
+    multiplicityClusterShift->Delete();
 
     TString chTimeDir(nameFile.c_str());
     chTimeDir+="/profiles/chTimeProfiles";
@@ -449,37 +536,83 @@ int Analysis::kGenStudy()
       fitTimes[ch]->Delete();
       profileTimes[ch]->Delete();
     }
-  eEffVoltage[i] = 0;
-  effVoltage[i] = getVoltage();
-  eEff[i] = sqrt((eff[i]*(numEntries-eff[i]))/numEntries)/eff[i];
-  eff[i] = eff[i]/numEntries;
-  eEffCluster[i] = sqrt((effCluster[i]*(numEntries-effCluster[i]))/numEntries)/effCluster[i];
-  effCluster[i] = effCluster[i]/numEntries;
+  
+    eEffVoltage[i] = 0;
+    effVoltage[i] = getVoltage();
+    eEff[i] = sqrt((eff[i]*(numEntries-eff[i]))/numEntries)/eff[i];
+    eff[i] = eff[i]/numEntries;
+    eEffCluster[i] = sqrt((effCluster[i]*(numEntries-effCluster[i]))/numEntries)/effCluster[i];
+    effCluster[i] = effCluster[i]/numEntries;
+
+    eEffShift[i] = sqrt((effShift[i]*(numEntries-effShift[i]))/numEntries)/effShift[i];
+    effShift[i] = effShift[i]/numEntries;
+    eEffClusterShift[i] = sqrt((effClusterShift[i]*(numEntries-effClusterShift[i]))/numEntries)/effClusterShift[i];
+    effClusterShift[i] = effClusterShift[i]/numEntries;
   }
+  
   TGraphErrors *Eff = new TGraphErrors(numFiles, effVoltage, eff, eEffVoltage, eEff);
   Eff->SetName(Form("%s Efficiency", plotName_));
   Eff->SetTitle(Form("%s Efficiency", plotName_));
   Eff->GetXaxis()->SetTitle("Voltage, V");
   Eff->GetYaxis()->SetTitle("Efficiency");
-  Eff->GetYaxis()->SetRange(0.3, 0);
-  Eff->SetMarkerStyle(8);
-  Eff->SetLineStyle(9);
-  Eff->SetFillColor(0);
-  Eff->SetLineWidth(1); 
   writeObject("", Eff);
   Eff->Delete();
+  
   TGraphErrors *EffCluster = new TGraphErrors(numFiles, effVoltage, effCluster, eEffVoltage, eEffCluster);
   EffCluster->SetName(Form("%s Efficiency-cluster", plotName_));
   EffCluster->SetTitle(Form("%s Efficiency-cluster", plotName_));
   EffCluster->GetXaxis()->SetTitle("Voltage, V");
   EffCluster->GetYaxis()->SetTitle("Efficiency");
-  EffCluster->GetYaxis()->SetRange(0.3, 0);
-  EffCluster->SetMarkerStyle(8);
-  EffCluster->SetLineStyle(9);
-  EffCluster->SetFillColor(0);
-  EffCluster->SetLineWidth(1); 
   writeObject("", EffCluster);
   EffCluster->Delete();
+  
+  TGraphErrors *EffShift = new TGraphErrors(numFiles, effVoltage, effShift, eEffVoltage, eEffShift);
+  EffShift->SetName(Form("%s Efficiency-shift", plotName_));
+  EffShift->SetTitle(Form("%s Efficiency-shift", plotName_));
+  EffShift->GetXaxis()->SetTitle("Voltage, V");
+  EffShift->GetYaxis()->SetTitle("Efficiency");
+  writeObject("", EffShift);
+  EffShift->Delete();
+  
+  TGraphErrors *EffClusterShift = new TGraphErrors(numFiles, effVoltage, effClusterShift, eEffVoltage, eEffClusterShift);
+  EffClusterShift->SetName(Form("%s Efficiency-cluster-shift", plotName_));
+  EffClusterShift->SetTitle(Form("%s Efficiency-cluster-shift", plotName_));
+  EffClusterShift->GetXaxis()->SetTitle("Voltage, V");
+  EffClusterShift->GetYaxis()->SetTitle("Efficiency");
+  writeObject("", EffClusterShift);
+  EffClusterShift->Delete();
+  
+  TGraphErrors *gMean = new TGraphErrors(numFiles, effVoltage, mean, eEffVoltage, eMean);
+  gMean->SetName(Form("%s Mean fit time", plotName_));
+  gMean->SetTitle(Form("%s Mean fit time", plotName_));
+  gMean->GetXaxis()->SetTitle("Voltage, V");
+  gMean->GetYaxis()->SetTitle("mean, ns");
+  writeObject("", gMean);
+  gMean->Delete();
+  
+  TGraphErrors *gSigma = new TGraphErrors(numFiles, effVoltage, sigma, eEffVoltage, eSigma);
+  gSigma->SetName(Form("%s Sigma fit time", plotName_));
+  gSigma->SetTitle(Form("%s Sigma fit time", plotName_));
+  gSigma->GetXaxis()->SetTitle("Voltage, V");
+  gSigma->GetYaxis()->SetTitle("sigma, ns");
+  writeObject("", gSigma);
+  gSigma->Delete();
+  
+  TGraphErrors *gMeanCluster = new TGraphErrors(numFiles, effVoltage, meanCluster, eEffVoltage, eMeanCluster);
+  gMeanCluster->SetName(Form("%s MeanCluster fit time", plotName_));
+  gMeanCluster->SetTitle(Form("%s MeanCluster fit time", plotName_));
+  gMeanCluster->GetXaxis()->SetTitle("Voltage, V");
+  gMeanCluster->GetYaxis()->SetTitle("mean, ns");
+  writeObject("", gMeanCluster);
+  gMeanCluster->Delete();
+  
+  TGraphErrors *gSigmaCluster = new TGraphErrors(numFiles, effVoltage, sigmaCluster, eEffVoltage, eSigmaCluster);
+  gSigmaCluster->SetName(Form("%s SigmaCluster fit time", plotName_));
+  gSigmaCluster->SetTitle(Form("%s SigmaCluster fit time", plotName_));
+  gSigmaCluster->GetXaxis()->SetTitle("Voltage, V");
+  gSigmaCluster->GetYaxis()->SetTitle("sigma, ns");
+  writeObject("", gSigmaCluster);
+  gSigmaCluster->Delete();
   return 1;
 }
 //------------------------------------------------------------------------------
